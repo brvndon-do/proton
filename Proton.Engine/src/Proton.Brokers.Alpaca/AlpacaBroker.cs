@@ -23,12 +23,9 @@ public class AlpacaBroker : IBroker
         _tradingClient = tradingEnvironment.GetAlpacaTradingClient(new SecretKey(_options.ApiKey, _options.ApiSecret));
     }
 
-    public Task<bool> CancelOrderAsync(string orderId, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
+    public async Task<bool> CancelOrderAsync(string orderId, CancellationToken cancellationToken = default) => await _tradingClient.CancelOrderAsync(Guid.Parse(orderId), cancellationToken);
 
-    public async Task<OrderResult> ExecuteTradeAsync(TradeOrder order, CancellationToken cancellationToken = default)
+    public async Task<OrderResult> CreateOrderAsync(TradeOrder order, CancellationToken cancellationToken = default)
     {
         IOrder orderResult = await _tradingClient.PostOrderAsync(new NewOrderRequest(
             symbol: order.Symbol,
@@ -41,7 +38,10 @@ public class AlpacaBroker : IBroker
         return new OrderResult
         {
             OrderId = orderResult.OrderId.ToString(),
-            Symbol = orderResult.Symbol
+            Symbol = orderResult.Symbol,
+            Quantity = orderResult.Quantity,
+            SubmittedAt = orderResult.SubmittedAtUtc ?? DateTimeOffset.UtcNow,
+            FilledQuantity = orderResult.FilledQuantity,
         };
     }
 
@@ -55,9 +55,14 @@ public class AlpacaBroker : IBroker
         throw new NotImplementedException();
     }
 
-    public Task<ProtonOrderStatus> GetOrderStatusAsync(string orderId, CancellationToken cancellationToken = default)
+    public async Task<ProtonOrderStatus> GetOrderStatusAsync(string orderId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        IOrder orderResult = await _tradingClient.GetOrderAsync(Guid.Parse(orderId), cancellationToken);
+
+        return new ProtonOrderStatus
+        {
+            OrderId = orderId,
+        };
     }
 
     public Task<IEnumerable<Trade>> GetTradeHistoryAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default)
