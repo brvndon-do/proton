@@ -3,7 +3,6 @@ using Proton.Engine.Core.Models;
 using Alpaca.Markets;
 using Microsoft.Extensions.Options;
 
-using ProtonOrderStatus = Proton.Engine.Core.Models.OrderStatus;
 using AlpacaMarkets = Alpaca.Markets;
 
 namespace Proton.Engine.Brokers.Alpaca;
@@ -23,7 +22,7 @@ public class AlpacaBroker : IBroker
         _tradingClient = tradingEnvironment.GetAlpacaTradingClient(new SecretKey(_options.ApiKey, _options.ApiSecret));
     }
 
-    public async Task<bool> CancelOrderAsync(string orderId, CancellationToken cancellationToken = default) => await _tradingClient.CancelOrderAsync(Guid.Parse(orderId), cancellationToken);
+    public Task<bool> CancelOrderAsync(string orderId, CancellationToken cancellationToken = default) => _tradingClient.CancelOrderAsync(Guid.Parse(orderId), cancellationToken);
 
     public async Task<OrderResult> CreateOrderAsync(TradeOrder order, CancellationToken cancellationToken = default)
     {
@@ -53,16 +52,6 @@ public class AlpacaBroker : IBroker
     public Task<IEnumerable<Position>> GetOpenPositionsAsync(CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
-    }
-
-    public async Task<ProtonOrderStatus> GetOrderStatusAsync(string orderId, CancellationToken cancellationToken = default)
-    {
-        IOrder orderResult = await _tradingClient.GetOrderAsync(Guid.Parse(orderId), cancellationToken);
-
-        return new ProtonOrderStatus
-        {
-            OrderId = orderId,
-        };
     }
 
     public Task<IEnumerable<Trade>> GetTradeHistoryAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default)
