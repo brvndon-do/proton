@@ -19,7 +19,9 @@
             },
             "sourceFileMap": {
                 "/Views": "${workspaceFolder}/Views"
-            }
+            },
+            "launchSettingsFilePath": "${workspaceFolder}/Proton.Engine/src/Proton.AppHost/Properties/launchSettings.json",
+            "launchSettingsProfile": "https"
         }
     ]
 }
