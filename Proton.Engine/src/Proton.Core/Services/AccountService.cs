@@ -9,5 +9,15 @@ public class AccountService(IBroker broker)
 
     public Task<Account> GetAccountAsync(CancellationToken cancellationToken = default) => _broker.GetAccountAsync(cancellationToken);
 
-    public Task<IEnumerable<Position>> GetPositionsAsync(CancellationToken cancellationToken = default) => _broker.GetOpenPositionsAsync(cancellationToken);
+    public async Task<IReadOnlyList<Position>> GetOpenPositionsAsync(CancellationToken cancellationToken = default)
+    {
+        List<Position> positions = [.. await _broker.GetOpenPositionsAsync(cancellationToken)];
+        return positions;
+    }
+
+    public async Task<IReadOnlyList<Trade>> GetTradeHistoryAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default)
+    {
+        List<Trade> trades = [.. await _broker.GetTradeHistoryAsync(from, to, cancellationToken)];
+        return trades;
+    }
 }
