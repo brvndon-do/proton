@@ -21,6 +21,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Proton.Core\Proton.Core.csproj" />
     <ProjectReference Include="..\Proton.Brokers.Alpaca\Proton.Brokers.Alpaca.csproj" />
+    <ProjectReference Include="..\Proton.MarketIngestion\Proton.MarketIngestion.csproj" />
+    <ProjectReference Include="..\Proton.Backtesting\Proton.Backtesting.csproj" />
   </ItemGroup>
 
 </Project>

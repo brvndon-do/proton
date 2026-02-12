@@ -1,7 +1,9 @@
 ﻿using Proton.Engine.AppHost.Services;
+using Proton.Engine.Backtesting;
 using Proton.Engine.Brokers.Alpaca;
 using Proton.Engine.Core.Interfaces;
 using Proton.Engine.Core.Services;
+using Proton.Engine.MarketIngestion;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +14,10 @@ builder.Services.AddSingleton<IBroker, AlpacaBroker>();
 
 // core services
 builder.Services.AddSingleton<TradeExecutionService>();
+
+// modules
+builder.Services.AddHostedService<BacktestingService>();
+builder.Services.AddHostedService<MarketIngestionService>();
 
 WebApplication app = builder.Build();
 

@@ -5,6 +5,7 @@
     <Project Path="src/Proton.Brokers.Alpaca/Proton.Brokers.Alpaca.csproj" />
     <Project Path="src/Proton.Core/Proton.Core.csproj" />
     <Project Path="src/Proton.Database/Proton.Database.csproj" />
+    <Project Path="src/Proton.MarketIngestion/Proton.MarketIngestion.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Proton.Backtesting.Tests/Proton.Backtesting.Tests.csproj" />

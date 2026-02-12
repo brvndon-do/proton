@@ -12,8 +12,8 @@
 ### High Level Overview
 
 The system is divided into two primary domains to separate "Thinking" from "Doing."
-- **The Agentic Layer:** A multi-agent cluster (Researcher, Strategist, Critic) that iterates on strategies. It outputs a structured JSON contract rather than raw text.
-- **The Trading Engine:** A deterministic C# service that acts as the gatekeeper. It validates agent proposals via backtesting before allowing them to touch the broker API.
+- **The Agentic Layer:** A multi-agent cluster (Researcher, Strategist, Critic) that iterates on strategies. It outputs a structured JSON contract via gRPC.
+- **The Trading Engine:** A deterministic C# service acting as the "Source of Truth". It manages market ingestion, validates proposals via backtesting, and handles live execution.
 
 ### Backend Overview
 
@@ -34,28 +34,41 @@ The system is divided into two primary domains to separate "Thinking" from "Doin
 
 #### Core Engine Components & Decisions
 
-##### A. The Validation Gate (Backtester)
+##### A. Market Ingestion Daemon
 
-- **Workflow:** The engine receives a strategy $\rightarrow$ runs an automated backtest against local Parquet data $\rightarrow$ compares results against a threshold (Sharpe Ratio, Max Drawdown) $\rightarrow$ accepts/rejects.    
-- **Anti-Bias:** The backtester and live engine will share the same math libraries to prevent **Indicator Drift**.
-    
-##### B. Broker Agnosticism
+The Engine runs a background worker that maintains a persistent WebSocket connection to the broker.
 
-- **Pattern:** Utilizing the **Strategy/Provider Pattern**. The engine interacts with an `IBroker` interface, making it trivial to swap Alpaca for Interactive Brokers or a Crypto Exchange later.
+- **Internal Distribution:** Uses System.Threading.Channels to broadcast data to the Backtester and Strategy Watchers.
+- **External Streaming:** Acts as a gRPC Server, streaming aggregated OHLCV bars and indicators to the Agentic Layer.
 
-##### C. Strategy vs. Signal Execution
+##### B. The Validation Gate (Backtester)
 
-- **Signal:** Immediate market/limit execution.
-- **Strategy:** The engine enters a "Watcher" state, monitoring real-time data for specific technical triggers (e.g., RSI crosses) before firing the order.
+The engine receives a strategy JSON via gRPC.
 
-##### D. Data Management
+- **Workflow:** Runs an automated backtest against local Parquet data.
+- **Anti-Bias:** Employs Walk-Forward Analysis (In-Sample vs. Out-of-Sample) to prevent the "Overfitting Trap".
 
-- **Caching Strategy:** A multi-tier approach. Recent bars stay in Redis; historical bars are stored in local Parquet files to avoid Alpaca rate limits and minimize latency.
+##### C. The Trading Process (Watcher & Execution)
+
+Once a strategy passes validation, it enters the live execution pipeline:
+
+1. **Strategy Watcher:** A stateful object that monitors the live gRPC-fed market stream for specific technical triggers.
+2. **Signal Generation:** When rules are met, a signal is sent to the Risk Module.
+3. **Risk Circuit Breaker:** Validates global drawdown, position sizing, and account equity before allowing execution.
+4. **Broker Provider:** Executes the order via the IBroker interface (Alpaca/IBKR).
+
+#### Data Schema & Persistence
+
+PostgreSQL serves as the unified storage layer for:
+
+- **Trade History:** Entry/Exit prices, slippage, and fees.
+- **Agent Context:** The "Thinking" (Chain-of-Thought) and JSON contracts associated with every trade.
+- **Post-Mortem Reports:** Feedback generated after trades to inform future agent iterations.
 
 #### Operational & Risk Decisions
 
-- **Admin Dashboard:** A simplified "Start/Stop" interface with a read-only view of positions. Manual trading is disabled in V1 to prevent state desynchronization.
-- **Risk Circuit Breaker:** A standalone logic module that monitors total account equity and can "Kill All" positions if a global drawdown limit is hit.
+- **Admin Dashboard:** A simplified "Start/Stop" interface with a read-only view of positions. Manual trading is disabled in V1 to prevent state desynchronization. Connects to Postgres for data visualization and the Agentic API for instruction updates.
+- **Risk Circuit Breaker:** A high-priority gRPC command from the Dashboard that triggers the Risk Circuit Breaker to cancel all orders and halt watchers.
 - **The Feedback Loop:** Failed trades or rejected backtests generate a "Post-Mortem" report. This context is fed back to the Agentic Layer to refine its future strategies.
 
 #### Key Engineering Challenges Identified
@@ -69,41 +82,76 @@ The system is divided into two primary domains to separate "Thinking" from "Doin
 
 ```mermaid
 graph TD
+    subgraph AgenticLayer ["Agentic Layer (Python/LLM)"]
+        A[Researcher Agent] -->|Context| B[Strategist Agent]
+        B -->|JSON Draft| C[Critic Agent]
+        C -- Rejects --> B
+        C -- Approves --> D[gRPC Client]
+        
+        AgenticAPI["Agent Management API"]
+    end
 
-subgraph Agentic_Layer ["Agentic Layer (LLM Cluster)"]
-	A[Researcher Agent] -->|Market Context| B[Strategist Agent]
-	B -->|Draft Strategy JSON| C[Critic Agent]
-	C -- Rejects --> B
-	C -- Approves --> D{JSON Contract}
-end
+    subgraph TradingEngine ["Proton Engine (C# Core)"]
+        G_Srv["gRPC Server Interface"]
+        
+        subgraph Ingestion ["Market Ingestion Module"]
+            M_Socket[Broker WebSockets] --> Live_Feed[Real-time Stream]
+            Live_Feed --> Cache[(Redis)]
+            Live_Feed --> P_Storage[(Parquet Files)]
+        end
 
-subgraph Trading_Engine ["C# Core Engine (.NET)"]
-	D --> E["Backtester (Validation gate)"]
+        subgraph Validation ["Strategy Validation"]
+            BT[Backtesting Module]
+            WF[Walk-Forward Validator]
+            BT <--> P_Storage
+        end
 
-	subgraph Data_Layer ["Data Management"]
-		F[(Local Parquet Files)]
-		G[(Redis Cache)]
-		H[Alpaca API]
-		H -->|Sync| F	
-		H -.->|Real-time| G
-	end
+        subgraph Execution ["Execution & Monitoring"]
+            Watcher[Strategy Watcher / Signal Generator]
+            Risk[Risk Circuit Breaker]
+            OrderMgr[Order Manager / Provider Pattern]
+        end
 
-	E <-->|Validate Stats| F
-	E -- Pass --> I[Strategy Executor / Watcher]
-	E -- Fail --> J[Post-Mortem Report]
-	I --> K[Broker Provider Pattern]
-	K --> L[Alpaca Markets / Live Broker]
-end
+        Reporting[Reporting Module]
+    end
 
-subgraph Risk_Monitoring ["Safety & Feedback"]
-	M[Risk Circuit Breaker] -->|Global Kill Switch| K
-	L -->|Trade Outcomes| N[Trade History SQLite]
-	N -->|Performance Data| J
-	J -->|Refinement Loop| A
-end
+    subgraph Storage ["Persistent State"]
+        DB[(PostgreSQL)]
+    end
 
-style Agentic_Layer fill:#f9f,stroke:#333,stroke-width:2px
-style Trading_Engine fill:#bbf,stroke:#333,stroke-width:2px
-style Risk_Monitoring fill:#fbb,stroke:#333,stroke-width:2px
+    subgraph Dashboard ["Admin & Control"]
+        Admin[Admin Dashboard]
+        DashAPI[Dashboard Backend]
+    end
+
+    subgraph Brokerages
+        Alpaca[Alpaca / IBKR]
+    end
+
+    %% Flow: Market Data to Agents
+    Live_Feed -.->|Aggregated Bars| G_Srv
+    G_Srv -.->|Streamed Context| A
+
+    %% Flow: Strategy Proposal
+    D -->|Submit Strategy| G_Srv
+    G_Srv --> BT
+    BT -- "Pass" --> Watcher
+    BT -- "Fail" --> Reporting
+
+    %% Flow: The Trading Process (The 'Black Box')
+    Watcher -->|Trigger Signal| Risk
+    Risk -->|Approved| OrderMgr
+    OrderMgr <--> Alpaca
+
+    %% State Management & Feedback
+    OrderMgr -->|Trade Events| DB
+    Reporting -->|Post-Mortem| DB
+    DB -.->|Historical Context| A
+    
+    %% Admin Control
+    DashAPI --> DB
+    DashAPI -- "Kill Switch" --> G_Srv
+    Admin -- "Update Instructions" --> AgenticAPI
+    DashAPI -- "System Status" --> Admin
 ```
 
