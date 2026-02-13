@@ -8,6 +8,7 @@
     <!-- THIS IS TEMPORARY -->
  	  <AllowMissingPrunePackageData>true</AllowMissingPrunePackageData>
     <!-- THIS IS TEMPORARY -->
+    <UserSecretsId>2f4f1d1a-b7d9-42a8-bcfc-391d3425ccb3</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
