@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Proton.Engine.Core.Interfaces;
 using Alpaca.Markets;
 using Proton.Engine.Core.Models;
@@ -11,9 +10,8 @@ namespace Proton.Engine.Brokers.Alpaca;
 public class AlpacaMarketDataProvider : IMarketDataProvider
 {
     private readonly IAlpacaDataStreamingClient _streamingClient;
-    private readonly ILogger<AlpacaMarketDataProvider> _logger;
 
-    public AlpacaMarketDataProvider(IOptions<AlpacaOptions> options, ILogger<AlpacaMarketDataProvider> logger)
+    public AlpacaMarketDataProvider(IOptions<AlpacaOptions> options)
     {
         AlpacaOptions _options = options.Value;
 
@@ -22,7 +20,6 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
             : Environments.Live;
 
         _streamingClient = tradingEnvironment.GetAlpacaDataStreamingClient(new SecretKey(_options.ApiKey, _options.ApiSecret));
-        _logger = logger;
     }
 
     public async IAsyncEnumerable<Bar> StreamBarsAsync(IEnumerable<string> symbols, [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -32,15 +29,14 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
         if (status != AuthStatus.Authorized)
             yield break;
 
-        // TODO: potentially switch to bounded channel instead. monitor this.
-        Channel<Bar> channel = Channel.CreateUnbounded<Bar>();
+        Channel<Bar> channel = Channel.CreateBounded<Bar>(1000);
         IEnumerable<IAlpacaDataSubscription<IBar>> data = symbols.Select(_streamingClient.GetDailyBarSubscription);
 
         foreach (IAlpacaDataSubscription<IBar> sub in data)
         {
             sub.Received += (quote) =>
             {
-                channel.Writer.TryWrite(new Bar
+                _ = channel.Writer.WriteAsync(new Bar
                 {
                     Symbol = quote.Symbol,
                     Open = quote.Open,
@@ -49,14 +45,15 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
                     Close = quote.Close,
                     Volume = quote.Volume,
                     Vwap = quote.Vwap,
-                    TradeCount = quote.TradeCount
+                    TradeCount = quote.TradeCount,
+                    DateTimeUtc = quote.TimeUtc,
                 });
             };
         }
 
         await _streamingClient.SubscribeAsync(data);
 
-        await foreach (Bar bar in channel.Reader.ReadAllAsync())
+        await foreach (Bar bar in channel.Reader.ReadAllAsync(cancellationToken))
         {
             yield return bar;
         }

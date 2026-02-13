@@ -3,12 +3,12 @@ using Microsoft.Extensions.Logging;
 using Proton.Engine.Core.Interfaces;
 using Proton.Engine.Core.Models;
 
-namespace Proton.Engine.MarketIngestion;
+namespace Proton.Engine.MarketDataIngestion;
 
-public class MarketIngestionService(IMarketDataProvider marketDataProvider, ILogger<MarketIngestionService> logger) : BackgroundService
+public class MarketDataIngestion(IMarketDataProvider marketDataProvider, ILogger<MarketDataIngestion> logger) : BackgroundService
 {
     private readonly IMarketDataProvider _marketDataProvider = marketDataProvider;
-    private readonly ILogger<MarketIngestionService> _logger = logger;
+    private readonly ILogger<MarketDataIngestion> _logger = logger;
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {

@@ -3,7 +3,7 @@ using Proton.Engine.Backtesting;
 using Proton.Engine.Brokers.Alpaca;
 using Proton.Engine.Core.Interfaces;
 using Proton.Engine.Core.Services;
-using Proton.Engine.MarketIngestion;
+using Proton.Engine.MarketDataIngestion;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +23,7 @@ builder.Services.AddSingleton<IMarketDataProvider, AlpacaMarketDataProvider>();
 
 // modules
 // builder.Services.AddHostedService<BacktestingService>();
-builder.Services.AddHostedService<MarketIngestionService>();
+builder.Services.AddHostedService<MarketDataIngestion>();
 
 WebApplication app = builder.Build();
 
