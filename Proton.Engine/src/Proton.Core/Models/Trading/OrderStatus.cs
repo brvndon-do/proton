@@ -1,14 +1,4 @@
-﻿namespace Proton.Engine.Core.Models;
-
-public enum OrderState
-{
-    Unknown = 0,
-    New,
-    PartiallyFilled,
-    Filled,
-    Cancelled,
-    Rejected
-}
+﻿namespace Proton.Engine.Core.Models.Trading;
 
 public class OrderStatus
 {

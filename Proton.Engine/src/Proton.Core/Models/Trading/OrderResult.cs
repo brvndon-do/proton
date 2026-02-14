@@ -1,4 +1,4 @@
-﻿namespace Proton.Engine.Core.Models;
+﻿namespace Proton.Engine.Core.Models.Trading;
 
 public class OrderResult
 {

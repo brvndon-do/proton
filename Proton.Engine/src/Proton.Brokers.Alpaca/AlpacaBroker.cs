@@ -1,8 +1,10 @@
-﻿using Proton.Engine.Core.Interfaces;
-using Proton.Engine.Core.Models;
+﻿using Proton.Engine.Core.Models;
+using Proton.Engine.Core.Models.Trading;
+using Proton.Engine.Core.Interfaces;
 using Alpaca.Markets;
 using Microsoft.Extensions.Options;
 
+using ProtonTradingModels = Proton.Engine.Core.Models.Trading;
 using AlpacaMarkets = Alpaca.Markets;
 
 namespace Proton.Engine.Brokers.Alpaca;
@@ -59,21 +61,21 @@ public class AlpacaBroker : IBroker
         throw new NotImplementedException();
     }
 
-    private AlpacaMarkets.OrderType ConvertOrderType(Core.Models.OrderType type) => type switch
+    private AlpacaMarkets.OrderType ConvertOrderType(ProtonTradingModels.OrderType type) => type switch
     {
-        Core.Models.OrderType.Market => AlpacaMarkets.OrderType.Market,
-        Core.Models.OrderType.Limit => AlpacaMarkets.OrderType.Limit,
-        Core.Models.OrderType.StopLimit => AlpacaMarkets.OrderType.StopLimit,
-        Core.Models.OrderType.Stop => AlpacaMarkets.OrderType.Stop,
+        ProtonTradingModels.OrderType.Market => AlpacaMarkets.OrderType.Market,
+        ProtonTradingModels.OrderType.Limit => AlpacaMarkets.OrderType.Limit,
+        ProtonTradingModels.OrderType.StopLimit => AlpacaMarkets.OrderType.StopLimit,
+        ProtonTradingModels.OrderType.Stop => AlpacaMarkets.OrderType.Stop,
         _ => AlpacaMarkets.OrderType.Market
     };
 
-    private AlpacaMarkets.TimeInForce ConvertTimeInForce(Core.Models.TimeInForce timeInForce) => timeInForce switch
+    private AlpacaMarkets.TimeInForce ConvertTimeInForce(ProtonTradingModels.TimeInForce timeInForce) => timeInForce switch
     {
-        Core.Models.TimeInForce.Day => AlpacaMarkets.TimeInForce.Day,
-        Core.Models.TimeInForce.Gtc => AlpacaMarkets.TimeInForce.Gtc,
-        Core.Models.TimeInForce.Ioc => AlpacaMarkets.TimeInForce.Ioc,
-        Core.Models.TimeInForce.Fok => AlpacaMarkets.TimeInForce.Fok,
+        ProtonTradingModels.TimeInForce.Day => AlpacaMarkets.TimeInForce.Day,
+        ProtonTradingModels.TimeInForce.Gtc => AlpacaMarkets.TimeInForce.Gtc,
+        ProtonTradingModels.TimeInForce.Ioc => AlpacaMarkets.TimeInForce.Ioc,
+        ProtonTradingModels.TimeInForce.Fok => AlpacaMarkets.TimeInForce.Fok,
         _ => AlpacaMarkets.TimeInForce.Day
     };
 }

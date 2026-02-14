@@ -1,5 +1,6 @@
 ﻿using Proton.Engine.Core.Interfaces;
 using Proton.Engine.Core.Models;
+using Proton.Engine.Core.Models.Trading;
 
 namespace Proton.Engine.Core.Services;
 

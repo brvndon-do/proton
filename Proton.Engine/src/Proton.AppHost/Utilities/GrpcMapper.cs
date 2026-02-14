@@ -2,7 +2,7 @@
 using Google.Protobuf.WellKnownTypes;
 
 using GrpcModels = Proton.Engine.AppHost.Grpc;
-using ProtonModels = Proton.Engine.Core.Models;
+using ProtonTradingModels = Proton.Engine.Core.Models.Trading;
 
 namespace Proton.Engine.AppHost.Utilities;
 
@@ -11,11 +11,11 @@ namespace Proton.Engine.AppHost.Utilities;
 
 public static class GrpcMapper
 {
-    public static ProtonModels.TradeOrder ToCore(this GrpcModels.TradeOrder order)
+    public static ProtonTradingModels.TradeOrder ToCore(this GrpcModels.TradeOrder order)
     {
         decimal quantity = ParseDecimalRequired(order.Quantity, nameof(order.Quantity));
 
-        return new ProtonModels.TradeOrder
+        return new ProtonTradingModels.TradeOrder
         {
             Symbol = order.Symbol,
             Side = MapOrderSide(order.Side),
@@ -28,7 +28,7 @@ public static class GrpcMapper
         };
     }
 
-    public static GrpcModels.OrderResult ToGrpc(this ProtonModels.OrderResult result)
+    public static GrpcModels.OrderResult ToGrpc(this ProtonTradingModels.OrderResult result)
     {
         GrpcModels.OrderResult grpcResult = new GrpcModels.OrderResult
         {
@@ -53,7 +53,7 @@ public static class GrpcMapper
         return grpcResult;
     }
 
-    public static GrpcModels.OrderStatus ToGrpc(this ProtonModels.OrderStatus status)
+    public static GrpcModels.OrderStatus ToGrpc(this ProtonTradingModels.OrderStatus status)
     {
         GrpcModels.OrderStatus grpcStatus = new GrpcModels.OrderStatus
         {
@@ -98,44 +98,44 @@ public static class GrpcMapper
         return parsed;
     }
 
-    private static ProtonModels.OrderSide MapOrderSide(GrpcModels.OrderSide side) => side switch
+    private static ProtonTradingModels.OrderSide MapOrderSide(GrpcModels.OrderSide side) => side switch
     {
-        GrpcModels.OrderSide.Buy => ProtonModels.OrderSide.Buy,
-        GrpcModels.OrderSide.Sell => ProtonModels.OrderSide.Sell,
-        _ => ProtonModels.OrderSide.Buy
+        GrpcModels.OrderSide.Buy => ProtonTradingModels.OrderSide.Buy,
+        GrpcModels.OrderSide.Sell => ProtonTradingModels.OrderSide.Sell,
+        _ => ProtonTradingModels.OrderSide.Buy
     };
 
-    private static GrpcModels.OrderSide MapOrderSide(ProtonModels.OrderSide side) => side switch
+    private static GrpcModels.OrderSide MapOrderSide(ProtonTradingModels.OrderSide side) => side switch
     {
-        ProtonModels.OrderSide.Buy => GrpcModels.OrderSide.Buy,
-        ProtonModels.OrderSide.Sell => GrpcModels.OrderSide.Sell,
+        ProtonTradingModels.OrderSide.Buy => GrpcModels.OrderSide.Buy,
+        ProtonTradingModels.OrderSide.Sell => GrpcModels.OrderSide.Sell,
         _ => GrpcModels.OrderSide.Unspecified
     };
 
-    private static ProtonModels.OrderType MapOrderType(GrpcModels.OrderType type) => type switch
+    private static ProtonTradingModels.OrderType MapOrderType(GrpcModels.OrderType type) => type switch
     {
-        GrpcModels.OrderType.Limit => ProtonModels.OrderType.Limit,
-        GrpcModels.OrderType.Stop => ProtonModels.OrderType.Stop,
-        GrpcModels.OrderType.StopLimit => ProtonModels.OrderType.StopLimit,
-        _ => ProtonModels.OrderType.Market
+        GrpcModels.OrderType.Limit => ProtonTradingModels.OrderType.Limit,
+        GrpcModels.OrderType.Stop => ProtonTradingModels.OrderType.Stop,
+        GrpcModels.OrderType.StopLimit => ProtonTradingModels.OrderType.StopLimit,
+        _ => ProtonTradingModels.OrderType.Market
     };
 
-    private static ProtonModels.TimeInForce MapTimeInForce(GrpcModels.TimeInForce timeInForce) => timeInForce switch
+    private static ProtonTradingModels.TimeInForce MapTimeInForce(GrpcModels.TimeInForce timeInForce) => timeInForce switch
     {
-        GrpcModels.TimeInForce.Day => ProtonModels.TimeInForce.Day,
-        GrpcModels.TimeInForce.Gtc => ProtonModels.TimeInForce.Gtc,
-        GrpcModels.TimeInForce.Ioc => ProtonModels.TimeInForce.Ioc,
-        GrpcModels.TimeInForce.Fok => ProtonModels.TimeInForce.Fok,
-        _ => ProtonModels.TimeInForce.Day
+        GrpcModels.TimeInForce.Day => ProtonTradingModels.TimeInForce.Day,
+        GrpcModels.TimeInForce.Gtc => ProtonTradingModels.TimeInForce.Gtc,
+        GrpcModels.TimeInForce.Ioc => ProtonTradingModels.TimeInForce.Ioc,
+        GrpcModels.TimeInForce.Fok => ProtonTradingModels.TimeInForce.Fok,
+        _ => ProtonTradingModels.TimeInForce.Day
     };
 
-    private static GrpcModels.OrderState MapOrderState(ProtonModels.OrderState state) => state switch
+    private static GrpcModels.OrderState MapOrderState(ProtonTradingModels.OrderState state) => state switch
     {
-        ProtonModels.OrderState.New => GrpcModels.OrderState.New,
-        ProtonModels.OrderState.PartiallyFilled => GrpcModels.OrderState.PartiallyFilled,
-        ProtonModels.OrderState.Filled => GrpcModels.OrderState.Filled,
-        ProtonModels.OrderState.Cancelled => GrpcModels.OrderState.Cancelled,
-        ProtonModels.OrderState.Rejected => GrpcModels.OrderState.Rejected,
+        ProtonTradingModels.OrderState.New => GrpcModels.OrderState.New,
+        ProtonTradingModels.OrderState.PartiallyFilled => GrpcModels.OrderState.PartiallyFilled,
+        ProtonTradingModels.OrderState.Filled => GrpcModels.OrderState.Filled,
+        ProtonTradingModels.OrderState.Cancelled => GrpcModels.OrderState.Cancelled,
+        ProtonTradingModels.OrderState.Rejected => GrpcModels.OrderState.Rejected,
         _ => GrpcModels.OrderState.Unspecified
     };
 }

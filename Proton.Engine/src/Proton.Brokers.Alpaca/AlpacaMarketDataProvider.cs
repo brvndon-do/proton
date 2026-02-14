@@ -9,7 +9,8 @@ namespace Proton.Engine.Brokers.Alpaca;
 
 public class AlpacaMarketDataProvider : IMarketDataProvider
 {
-    private readonly IAlpacaDataStreamingClient _streamingClient;
+    private readonly IAlpacaDataStreamingClient _dataStreamingClient;
+    private readonly IAlpacaNewsStreamingClient _newsStreamingClient;
 
     public AlpacaMarketDataProvider(IOptions<AlpacaOptions> options)
     {
@@ -18,19 +19,21 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
         IEnvironment tradingEnvironment = _options.IsPaperAccount
             ? Environments.Paper
             : Environments.Live;
+        SecretKey key = new SecretKey(_options.ApiKey, _options.ApiSecret);
 
-        _streamingClient = tradingEnvironment.GetAlpacaDataStreamingClient(new SecretKey(_options.ApiKey, _options.ApiSecret));
+        _dataStreamingClient = tradingEnvironment.GetAlpacaDataStreamingClient(key);
+        _newsStreamingClient = tradingEnvironment.GetAlpacaNewsStreamingClient(key);
     }
 
     public async IAsyncEnumerable<Bar> StreamBarsAsync(IEnumerable<string> symbols, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        AuthStatus status = await _streamingClient.ConnectAndAuthenticateAsync(cancellationToken);
+        AuthStatus status = await _dataStreamingClient.ConnectAndAuthenticateAsync(cancellationToken);
 
         if (status != AuthStatus.Authorized)
             yield break;
 
-        Channel<Bar> channel = Channel.CreateBounded<Bar>(1000);
-        IEnumerable<IAlpacaDataSubscription<IBar>> data = symbols.Select(_streamingClient.GetDailyBarSubscription);
+        Channel<Bar> channel = Channel.CreateBounded<Bar>(1_000);
+        IEnumerable<IAlpacaDataSubscription<IBar>> data = symbols.Select(_dataStreamingClient.GetDailyBarSubscription);
 
         foreach (IAlpacaDataSubscription<IBar> sub in data)
         {
@@ -47,15 +50,52 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
                     Vwap = quote.Vwap,
                     TradeCount = quote.TradeCount,
                     DateTimeUtc = quote.TimeUtc,
-                });
+                }, cancellationToken);
             };
         }
 
-        await _streamingClient.SubscribeAsync(data);
+        await _dataStreamingClient.SubscribeAsync(data, cancellationToken);
 
         await foreach (Bar bar in channel.Reader.ReadAllAsync(cancellationToken))
         {
             yield return bar;
+        }
+    }
+
+    public async IAsyncEnumerable<NewsArticle> StreamNewsDataAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        AuthStatus status = await _newsStreamingClient.ConnectAndAuthenticateAsync(cancellationToken);
+
+        if (status != AuthStatus.Authorized)
+            yield break;
+
+        Channel<NewsArticle> channel = Channel.CreateBounded<NewsArticle>(new BoundedChannelOptions(100)
+        {
+            FullMode = BoundedChannelFullMode.DropOldest, // NOTE: news market data is still good for context, but prob not as impactful? ok to drop i think.
+        });
+
+        IAlpacaDataSubscription<INewsArticle> data = _newsStreamingClient.GetNewsSubscription();
+
+        data.Received += article =>
+        {
+            _ = channel.Writer.WriteAsync(new NewsArticle
+            {
+                Id = article.Id.ToString(),
+                Headline = article.Headline,
+                Summary = article.Summary,
+                Content = article.Content,
+                Author = article.Author,
+                Source = article.Source,
+                Symbols = article.Symbols,
+                CreatedAtUtc = article.CreatedAtUtc,
+            }, cancellationToken);
+        };
+
+        await _newsStreamingClient.SubscribeAsync(data, cancellationToken);
+
+        await foreach (NewsArticle article in channel.Reader.ReadAllAsync(cancellationToken))
+        {
+            yield return article;
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Proton.Engine.Core.Models.Execution;
+﻿using Proton.Engine.Core.Models.Trading;
+
+namespace Proton.Engine.Core.Models.Execution;
 
 public sealed class ExecutionBatchResult(IReadOnlyList<OrderResult> results, IReadOnlyList<ExecutionFailure> failures)
 {

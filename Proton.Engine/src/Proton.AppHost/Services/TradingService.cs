@@ -3,7 +3,7 @@ using Proton.Engine.AppHost.Grpc;
 using Proton.Engine.AppHost.Utilities;
 using Proton.Engine.Core.Services;
 
-using ProtonModels = Proton.Engine.Core.Models;
+using ProtonTradingModels = Proton.Engine.Core.Models.Trading;
 
 namespace Proton.Engine.AppHost.Services;
 
@@ -20,8 +20,8 @@ public class TradingService(TradeExecutionService tradeExecutionService, ILogger
 
         try
         {
-            ProtonModels.TradeOrder order = request.Order.ToCore();
-            ProtonModels.OrderResult result = await _tradeExecutionService.SubmitOrderAsync(order, context.CancellationToken);
+            ProtonTradingModels.TradeOrder order = request.Order.ToCore();
+            ProtonTradingModels.OrderResult result = await _tradeExecutionService.SubmitOrderAsync(order, context.CancellationToken);
 
             return new CreateOrderResponse { Result = result.ToGrpc() };
         }

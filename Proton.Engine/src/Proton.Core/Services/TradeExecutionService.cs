@@ -1,25 +1,19 @@
-﻿using Proton.Engine.Core.Models;
+﻿using Proton.Engine.Core.Models.Trading;
 using Proton.Engine.Core.Models.Execution;
 using Proton.Engine.Core.Interfaces;
-using Microsoft.Extensions.Logging;
 
 namespace Proton.Engine.Core.Services;
 
-public class TradeExecutionService(IBroker broker, ILogger<TradeExecutionService> logger)
+public class TradeExecutionService(IBroker broker)
 {
     private readonly IBroker _broker = broker;
-    private readonly ILogger<TradeExecutionService> _logger = logger;
 
-    public Task<OrderResult> SubmitOrderAsync(TradeOrder order, CancellationToken cancellationToken = default)
-    {
-        return _broker.CreateOrderAsync(order, cancellationToken);
-    }
+    public Task<OrderResult> SubmitOrderAsync(TradeOrder order, CancellationToken cancellationToken = default) => _broker.CreateOrderAsync(order, cancellationToken);
 
     public async Task<ExecutionBatchResult> SubmitOrdersAsync(IEnumerable<TradeOrder> orders, ExecutionOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= new ExecutionOptions();
         List<TradeOrder> orderList = [.. orders];
-        _logger.LogTrace("Submitting {count} orders", orderList.Count);
 
         SemaphoreSlim semaphore = new SemaphoreSlim(options.MaxDegreeOfParallelism);
         List<Task> tasks = [];
@@ -74,7 +68,6 @@ public class TradeExecutionService(IBroker broker, ILogger<TradeExecutionService
     public async Task<bool> CancelOrderAsync(string orderId, CancellationToken cancellationToken = default)
     {
         bool success = await _broker.CancelOrderAsync(orderId, cancellationToken);
-        _logger.LogTrace("[{success}]: cancel orderId {orderId}", success ? "SUCCESS" : "FAILURE", orderId);
 
         return success;
     }

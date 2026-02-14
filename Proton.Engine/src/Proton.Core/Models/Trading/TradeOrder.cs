@@ -1,26 +1,4 @@
-﻿namespace Proton.Engine.Core.Models;
-
-public enum OrderSide
-{
-    Buy = 0,
-    Sell
-}
-
-public enum OrderType
-{
-    Market = 0,
-    Limit,
-    Stop,
-    StopLimit
-}
-
-public enum TimeInForce
-{
-    Day = 0,
-    Gtc,
-    Ioc,
-    Fok
-}
+﻿namespace Proton.Engine.Core.Models.Trading;
 
 public class TradeOrder
 {
