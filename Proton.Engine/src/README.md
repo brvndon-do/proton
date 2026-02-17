@@ -6,6 +6,7 @@
 - `Proton.Backtesting`: Backtesting module
 - `Proton.Core`: Core interfaces, models, and services
 - `Proton.Database`: Database contexts and migrations
+- `Proton.Indicators`: Indicator implementation to be shared across services
 - `Proton.MarketDataIngestion`: Market data ingestion for real-time updates, historical data, news feed, etc.
 
 ## Brokers

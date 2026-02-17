@@ -6,9 +6,9 @@ namespace Proton.Engine.AppHost.Managers;
 
 public class ChannelManager : IChannelManager
 {
-    public Channel<MarketDataRequest> MarketDataRequestChannel => Channel.CreateBounded<MarketDataRequest>(1_000);
-    public Channel<MarketDataSnapshot> MarketDataSnapshotChannel => Channel.CreateBounded<MarketDataSnapshot>(1_000);
+    private readonly Channel<MarketDataContext> _marketDataContext = Channel.CreateBounded<MarketDataContext>(1_000);
+    private readonly Channel<MarketNewsContext> _marketNewsContext = Channel.CreateBounded<MarketNewsContext>(100);
 
-    public Channel<MarketNewsSnapshot> MarketNewsSnapshotChannel => Channel.CreateBounded<MarketNewsSnapshot>(100);
-
+    public Channel<MarketDataContext> MarketDataContextChannel => _marketDataContext;
+    public Channel<MarketNewsContext> MarketNewsContextChannel => _marketNewsContext;
 }

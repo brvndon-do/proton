@@ -162,5 +162,27 @@ public static class GrpcMapper
         Indicators = { } // TODO: send indicators
     };
 
+    public static ProtonMarketDataModels.MarketNewsRequest ToCore(this GrpcModels.NewsSnapshotRequest request) => new ProtonMarketDataModels.MarketNewsRequest
+    {
+        Symbols = request.Symbols,
+        StartInterval = request.StartInterval?.ToDateTimeOffset(),
+        EndInterval = request.EndInterval?.ToDateTimeOffset(),
+        Limit = request.Limit,
+    };
+
+    public static GrpcModels.NewsSnapshot ToGrpc(this ProtonMarketDataModels.MarketNewsSnapshot snapshot)
+    {
+        GrpcModels.NewsSnapshot grpcSnapshot = new GrpcModels.NewsSnapshot
+        {
+            Headline = snapshot.Headline,
+            Summary = snapshot.Summary,
+            Source = snapshot.Source,
+            CreatedAt = Timestamp.FromDateTimeOffset(snapshot.CreatedAtUtc),
+        };
+        grpcSnapshot.Symbols.AddRange(snapshot.Symbols);
+
+        return grpcSnapshot;
+    }
+
     #endregion
 }

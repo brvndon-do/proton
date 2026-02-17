@@ -5,9 +5,12 @@ option csharp_namespace = "Proton.Engine.AppHost.Grpc";
 package proton.market_data;
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 service MarketData {
   rpc StreamMarketSnapshot (MarketSnapshotRequest) returns (stream MarketSnapshot);
+  rpc StreamNewsSnapshot (google.protobuf.Empty) returns (stream NewsSnapshot);
+  rpc GetNewsSnapshot (NewsSnapshotRequest) returns (stream NewsSnapshot);
 }
 
 message MarketSnapshotRequest {
@@ -27,3 +30,17 @@ message MarketSnapshot {
   map<string, string> indicators = 8;
 }
 
+message NewsSnapshotRequest {
+  repeated string symbols = 1;
+  optional google.protobuf.Timestamp start_interval = 2;
+  optional google.protobuf.Timestamp end_interval = 3;
+  int32 limit = 4;
+}
+
+message NewsSnapshot {
+  string headline = 1;
+  optional string summary = 2;
+  optional string source = 3;
+  repeated string symbols = 4;
+  google.protobuf.Timestamp created_at = 5;
+}

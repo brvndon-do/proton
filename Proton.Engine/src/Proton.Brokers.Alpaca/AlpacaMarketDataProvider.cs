@@ -4,11 +4,13 @@ using Alpaca.Markets;
 using Proton.Engine.Core.Models;
 using System.Threading.Channels;
 using System.Runtime.CompilerServices;
+using Proton.Engine.Core.Models.MarketData;
 
 namespace Proton.Engine.Brokers.Alpaca;
 
 public class AlpacaMarketDataProvider : IMarketDataProvider
 {
+    private readonly IAlpacaDataClient _dataClient;
     private readonly IAlpacaDataStreamingClient _dataStreamingClient;
     private readonly IAlpacaNewsStreamingClient _newsStreamingClient;
 
@@ -21,6 +23,7 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
             : Environments.Live;
         SecretKey key = new SecretKey(_options.ApiKey, _options.ApiSecret);
 
+        _dataClient = tradingEnvironment.GetAlpacaDataClient(key);
         _dataStreamingClient = tradingEnvironment.GetAlpacaDataStreamingClient(key);
         _newsStreamingClient = tradingEnvironment.GetAlpacaNewsStreamingClient(key);
     }
@@ -97,5 +100,28 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
         {
             yield return article;
         }
+    }
+
+    public async Task<IEnumerable<NewsArticle>> GetNewsDataAsync(MarketNewsRequest request, CancellationToken cancellationToken = default)
+    {
+        int limit = request.Limit > 0 ? request.Limit : 10;
+        IPage<INewsArticle> articles = await _dataClient.ListNewsArticlesAsync(new NewsArticlesRequest(request.Symbols)
+        {
+            TimeInterval = new Interval<DateTime>(request.StartInterval?.DateTime, request.EndInterval?.DateTime)
+        }, cancellationToken);
+
+        return articles.Items
+            .Take(limit)
+            .Select(x => new NewsArticle
+            {
+                Id = x.Id.ToString(),
+                Headline = x.Headline,
+                Summary = x.Summary,
+                Content = x.Content,
+                Author = x.Author,
+                Source = x.Source,
+                Symbols = x.Symbols,
+                CreatedAtUtc = x.CreatedAtUtc,
+            });
     }
 }
