@@ -46,9 +46,7 @@ public class TradeExecutionService(IBroker broker)
                     }
 
                     if (!options.ContinueOnError)
-                    {
                         throw;
-                    }
                 }
                 finally
                 {

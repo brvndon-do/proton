@@ -1,4 +1,5 @@
-﻿using Proton.Engine.AppHost.Services;
+﻿using Proton.Engine.AppHost.Managers;
+using Proton.Engine.AppHost.Services;
 using Proton.Engine.Backtesting;
 using Proton.Engine.Brokers.Alpaca;
 using Proton.Engine.Core.Interfaces;
@@ -11,6 +12,9 @@ builder.Services.AddGrpc();
 
 // appsettings/usersecrets configuration
 builder.Services.Configure<AlpacaOptions>(builder.Configuration.GetSection(AlpacaOptions.SectionName));
+
+// managers
+builder.Services.AddSingleton<IChannelManager, ChannelManager>();
 
 // brokers
 builder.Services.AddSingleton<IBroker, AlpacaBroker>();
@@ -28,6 +32,7 @@ builder.Services.AddHostedService<MarketDataIngestion>();
 WebApplication app = builder.Build();
 
 app.MapGrpcService<TradingService>();
+app.MapGrpcService<MarketDataService>();
 
 app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
 

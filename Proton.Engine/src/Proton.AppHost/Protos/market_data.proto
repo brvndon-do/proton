@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+option csharp_namespace = "Proton.Engine.AppHost.Grpc";
+
+package proton.market_data;
+
+import "google/protobuf/timestamp.proto";
+
+service MarketData {
+  rpc StreamMarketSnapshot (MarketSnapshotRequest) returns (stream MarketSnapshot);
+}
+
+message MarketSnapshotRequest {
+  repeated string symbols = 1;
+  string timeframe = 2; // TODO: maybe use an enum?
+}
+
+message MarketSnapshot {
+  string symbol = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string open = 3;
+  string high = 4;
+  string low = 5;
+  string close = 6;
+  string volume = 7;
+
+  map<string, string> indicators = 8;
+}
+

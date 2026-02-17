@@ -3,6 +3,7 @@ using Google.Protobuf.WellKnownTypes;
 
 using GrpcModels = Proton.Engine.AppHost.Grpc;
 using ProtonTradingModels = Proton.Engine.Core.Models.Trading;
+using ProtonMarketDataModels = Proton.Engine.Core.Models.MarketData;
 
 namespace Proton.Engine.AppHost.Utilities;
 
@@ -11,6 +12,36 @@ namespace Proton.Engine.AppHost.Utilities;
 
 public static class GrpcMapper
 {
+    #region Helpers
+    private static string FormatDecimal(decimal value) => value.ToString(CultureInfo.InvariantCulture);
+
+    private static string FormatDecimal(decimal? value) => value is not null
+        ? value.Value.ToString(CultureInfo.InvariantCulture)
+        : string.Empty;
+
+    private static decimal ParseDecimalRequired(string value, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new InvalidOperationException($"{fieldName} is required.");
+
+        if (!decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal parsed))
+            throw new InvalidOperationException($"{fieldName} must be a valid decimal.");
+
+        return parsed;
+    }
+
+    private static decimal? ParseDecimalOptional(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        if (!decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal parsed))
+            throw new InvalidOperationException("Invalid decimal value.");
+
+        return parsed;
+    }
+    #endregion
+    #region Trading
     public static ProtonTradingModels.TradeOrder ToCore(this GrpcModels.TradeOrder order)
     {
         decimal quantity = ParseDecimalRequired(order.Quantity, nameof(order.Quantity));
@@ -41,8 +72,8 @@ public static class GrpcMapper
             Message = result.Message ?? string.Empty
         };
 
-        if (result.SubmittedAt != default)
-            grpcResult.SubmittedAt = Timestamp.FromDateTime(result.SubmittedAt.UtcDateTime);
+        if (result.SubmittedAtUtc != default)
+            grpcResult.SubmittedAt = Timestamp.FromDateTime(result.SubmittedAtUtc.UtcDateTime);
 
         if (result.Status is not null)
             grpcResult.Status = result.Status.ToGrpc();
@@ -64,38 +95,10 @@ public static class GrpcMapper
             Reason = status.Reason ?? string.Empty
         };
 
-        if (status.UpdatedAt != default)
-            grpcStatus.UpdatedAt = Timestamp.FromDateTime(status.UpdatedAt.UtcDateTime);
+        if (status.UpdatedAtUtc != default)
+            grpcStatus.UpdatedAt = Timestamp.FromDateTime(status.UpdatedAtUtc.UtcDateTime);
 
         return grpcStatus;
-    }
-
-    private static string FormatDecimal(decimal value) => value.ToString(CultureInfo.InvariantCulture);
-
-    private static string FormatDecimal(decimal? value) => value is not null
-        ? value.Value.ToString(CultureInfo.InvariantCulture)
-        : string.Empty;
-
-    private static decimal ParseDecimalRequired(string value, string fieldName)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new InvalidOperationException($"{fieldName} is required.");
-
-        if (!decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal parsed))
-            throw new InvalidOperationException($"{fieldName} must be a valid decimal.");
-
-        return parsed;
-    }
-
-    private static decimal? ParseDecimalOptional(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return null;
-
-        if (!decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal parsed))
-            throw new InvalidOperationException("Invalid decimal value.");
-
-        return parsed;
     }
 
     private static ProtonTradingModels.OrderSide MapOrderSide(GrpcModels.OrderSide side) => side switch
@@ -138,4 +141,26 @@ public static class GrpcMapper
         ProtonTradingModels.OrderState.Rejected => GrpcModels.OrderState.Rejected,
         _ => GrpcModels.OrderState.Unspecified
     };
+    #endregion
+
+    #region Market Data
+    public static ProtonMarketDataModels.MarketDataRequest ToCore(this GrpcModels.MarketSnapshotRequest request) => new ProtonMarketDataModels.MarketDataRequest
+    {
+        Symbols = request.Symbols,
+        Timeframe = request.Timeframe
+    };
+
+    public static GrpcModels.MarketSnapshot ToGrpc(this ProtonMarketDataModels.MarketDataSnapshot snapshot) => new GrpcModels.MarketSnapshot
+    {
+        Symbol = snapshot.Symbol,
+        Timestamp = Timestamp.FromDateTimeOffset(snapshot.TimestampUtc),
+        Open = FormatDecimal(snapshot.Open),
+        High = FormatDecimal(snapshot.High),
+        Low = FormatDecimal(snapshot.Low),
+        Close = FormatDecimal(snapshot.Close),
+        Volume = FormatDecimal(snapshot.Volume),
+        Indicators = { } // TODO: send indicators
+    };
+
+    #endregion
 }

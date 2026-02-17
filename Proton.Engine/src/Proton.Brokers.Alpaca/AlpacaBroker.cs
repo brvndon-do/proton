@@ -41,7 +41,7 @@ public class AlpacaBroker : IBroker
             OrderId = orderResult.OrderId.ToString(),
             Symbol = orderResult.Symbol,
             Quantity = orderResult.Quantity,
-            SubmittedAt = orderResult.SubmittedAtUtc ?? DateTimeOffset.UtcNow,
+            SubmittedAtUtc = orderResult.SubmittedAtUtc ?? DateTimeOffset.UtcNow,
             FilledQuantity = orderResult.FilledQuantity,
         };
     }
@@ -60,6 +60,8 @@ public class AlpacaBroker : IBroker
     {
         throw new NotImplementedException();
     }
+
+    public async Task<bool> IsMarketOpenAsync(CancellationToken cancellationToken = default) => (await _tradingClient.GetClockAsync(cancellationToken)).IsOpen;
 
     private AlpacaMarkets.OrderType ConvertOrderType(ProtonTradingModels.OrderType type) => type switch
     {

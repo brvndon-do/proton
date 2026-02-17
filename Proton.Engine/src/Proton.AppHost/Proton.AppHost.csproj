@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <Protobuf Include="Protos\trading.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\market_data.proto" GrpcServices="Server" />
   </ItemGroup>
 
   <ItemGroup>

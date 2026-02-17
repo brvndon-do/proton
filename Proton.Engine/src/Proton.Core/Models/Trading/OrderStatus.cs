@@ -6,6 +6,6 @@ public class OrderStatus
     public OrderState State { get; set; }
     public decimal FilledQuantity { get; set; }
     public decimal RemainingQuantity { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
+    public DateTimeOffset UpdatedAtUtc { get; set; }
     public string? Reason { get; set; }
 }
