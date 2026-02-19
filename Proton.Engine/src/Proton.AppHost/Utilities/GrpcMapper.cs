@@ -151,17 +151,24 @@ public static class GrpcMapper
         Indicators = request.Indicators.Select(x => System.Enum.Parse<IndicatorType>(x)), // TODO: this is not resilient, will break if string type is not formatted exaclty as enum
     };
 
-    public static GrpcModels.MarketSnapshot ToGrpc(this ProtonMarketDataModels.MarketDataSnapshot snapshot) => new GrpcModels.MarketSnapshot
+    public static GrpcModels.MarketSnapshot ToGrpc(this ProtonMarketDataModels.MarketDataSnapshot snapshot)
     {
-        Symbol = snapshot.Symbol,
-        Timestamp = Timestamp.FromDateTimeOffset(snapshot.TimestampUtc),
-        Open = FormatDecimal(snapshot.Open),
-        High = FormatDecimal(snapshot.High),
-        Low = FormatDecimal(snapshot.Low),
-        Close = FormatDecimal(snapshot.Close),
-        Volume = FormatDecimal(snapshot.Volume),
-        Indicators = { } // TODO: send indicators
-    };
+        GrpcModels.MarketSnapshot grpcSnapshot = new GrpcModels.MarketSnapshot
+        {
+            Symbol = snapshot.Symbol,
+            Timestamp = Timestamp.FromDateTimeOffset(snapshot.TimestampUtc),
+            Open = FormatDecimal(snapshot.Open),
+            High = FormatDecimal(snapshot.High),
+            Low = FormatDecimal(snapshot.Low),
+            Close = FormatDecimal(snapshot.Close),
+            Volume = FormatDecimal(snapshot.Volume)
+        };
+
+        foreach (KeyValuePair<IndicatorType, decimal> kvp in snapshot.Indicators)
+            grpcSnapshot.Indicators.Add(kvp.Key.ToString().ToLower(), kvp.Value.ToString()); // TODO: format the key different instead of using .ToLower()
+
+        return grpcSnapshot;
+    }
 
     public static ProtonMarketDataModels.MarketNewsRequest ToCore(this GrpcModels.NewsSnapshotRequest request) => new ProtonMarketDataModels.MarketNewsRequest
     {
