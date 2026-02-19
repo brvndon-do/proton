@@ -15,7 +15,7 @@ service MarketData {
 
 message MarketSnapshotRequest {
   repeated string symbols = 1;
-  string timeframe = 2; // TODO: maybe use an enum?
+  repeated string indicators = 2; // TODO: use an enum to enforce available indicators
 }
 
 message MarketSnapshot {

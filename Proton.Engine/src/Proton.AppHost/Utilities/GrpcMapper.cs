@@ -4,6 +4,7 @@ using Google.Protobuf.WellKnownTypes;
 using GrpcModels = Proton.Engine.AppHost.Grpc;
 using ProtonTradingModels = Proton.Engine.Core.Models.Trading;
 using ProtonMarketDataModels = Proton.Engine.Core.Models.MarketData;
+using Proton.Engine.Core.Models;
 
 namespace Proton.Engine.AppHost.Utilities;
 
@@ -147,7 +148,7 @@ public static class GrpcMapper
     public static ProtonMarketDataModels.MarketDataRequest ToCore(this GrpcModels.MarketSnapshotRequest request) => new ProtonMarketDataModels.MarketDataRequest
     {
         Symbols = request.Symbols,
-        Timeframe = request.Timeframe
+        Indicators = request.Indicators.Select(x => System.Enum.Parse<IndicatorType>(x)), // TODO: this is not resilient, will break if string type is not formatted exaclty as enum
     };
 
     public static GrpcModels.MarketSnapshot ToGrpc(this ProtonMarketDataModels.MarketDataSnapshot snapshot) => new GrpcModels.MarketSnapshot

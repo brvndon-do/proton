@@ -11,4 +11,8 @@
     <PackageReference Include="Skender.Stock.Indicators" Version="2.7.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Proton.Core\Proton.Core.csproj" />
+  </ItemGroup>
+
 </Project>

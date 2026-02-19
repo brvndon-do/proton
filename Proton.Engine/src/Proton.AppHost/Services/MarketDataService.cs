@@ -27,7 +27,7 @@ public class MarketDataService(
         await _channelManager.MarketDataContextChannel.Writer.WriteAsync(new MarketDataContext
         {
             Request = request.ToCore(),
-            MarketDataChannel = responseChannel,
+            MarketDataResponseChannel = responseChannel,
         }, cancellationToken);
 
         try

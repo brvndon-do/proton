@@ -4,6 +4,7 @@ using Proton.Engine.Backtesting;
 using Proton.Engine.Brokers.Alpaca;
 using Proton.Engine.Core.Interfaces;
 using Proton.Engine.Core.Services;
+using Proton.Engine.Indicators;
 using Proton.Engine.MarketDataIngestion;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,7 @@ builder.Services.AddSingleton<IBroker, AlpacaBroker>();
 
 // core services
 builder.Services.AddSingleton<TradeExecutionService>();
+builder.Services.AddSingleton<IIndicatorService, IndicatorService>();
 
 // market data providers
 builder.Services.AddSingleton<IMarketDataProvider, AlpacaMarketDataProvider>();

@@ -1,10 +1,5 @@
 ﻿namespace Proton.Engine.Core.Models.MarketData;
 
-public enum Indicators
-{
-
-}
-
 public class MarketDataSnapshot
 {
     public required string Symbol { get; set; }
@@ -16,5 +11,5 @@ public class MarketDataSnapshot
     public decimal Volume { get; set; }
 
     // TODO: DON'T FORGET TO PROPERLY TYPE THE KEY INSTEAD OF USING A STRING...
-    public required IDictionary<string, decimal> Indicators { get; set; }
+    public required IDictionary<IndicatorType, decimal> Indicators { get; set; }
 }
