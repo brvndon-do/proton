@@ -3,7 +3,9 @@ using Proton.Engine.AppHost.Services;
 using Proton.Engine.Backtesting;
 using Proton.Engine.Brokers.Alpaca;
 using Proton.Engine.Core.Interfaces;
+using Proton.Engine.Core.Interfaces.Repositories;
 using Proton.Engine.Core.Services;
+using Proton.Engine.Database.Parquet;
 using Proton.Engine.Indicators;
 using Proton.Engine.MarketDataIngestion;
 
@@ -23,6 +25,9 @@ builder.Services.AddSingleton<IBroker, AlpacaBroker>();
 // core services
 builder.Services.AddSingleton<TradeExecutionService>();
 builder.Services.AddSingleton<IIndicatorService, IndicatorService>();
+
+// database repos
+builder.Services.AddSingleton<IBarRepository, ParquetRepository>();
 
 // market data providers
 builder.Services.AddSingleton<IMarketDataProvider, AlpacaMarketDataProvider>();

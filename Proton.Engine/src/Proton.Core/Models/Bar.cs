@@ -2,7 +2,7 @@
 
 public class Bar
 {
-    public required string Symbol { get; set; }
+    public string Symbol { get; set; } = string.Empty;
     public decimal Open { get; set; }
     public decimal High { get; set; }
     public decimal Low { get; set; }

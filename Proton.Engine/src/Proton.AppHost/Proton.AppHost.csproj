@@ -26,6 +26,7 @@
     <ProjectReference Include="..\Proton.Backtesting\Proton.Backtesting.csproj" />
     <ProjectReference Include="..\Proton.MarketDataIngestion\Proton.MarketDataIngestion.csproj" />
     <ProjectReference Include="..\Proton.Indicators\Proton.Indicators.csproj" />
+    <ProjectReference Include="..\Proton.Database.Parquet\Proton.Database.Parquet.csproj" />
   </ItemGroup>
 
 </Project>

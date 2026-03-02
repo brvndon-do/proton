@@ -4,7 +4,7 @@
     <Project Path="src/Proton.Backtesting/Proton.Backtesting.csproj" />
     <Project Path="src/Proton.Brokers.Alpaca/Proton.Brokers.Alpaca.csproj" />
     <Project Path="src/Proton.Core/Proton.Core.csproj" />
-    <Project Path="src/Proton.Database/Proton.Database.csproj" />
+    <Project Path="src/Proton.Database.Parquet/Proton.Database.Parquet.csproj" />
     <Project Path="src/Proton.Indicators/Proton.Indicators.csproj" />
     <Project Path="src/Proton.MarketDataIngestion/Proton.MarketDataIngestion.csproj" />
   </Folder>
