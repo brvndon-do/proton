@@ -4,7 +4,7 @@ public class OrderResult
 {
     public required string OrderId { get; set; }
     public OrderStatus? Status { get; set; }
-    public DateTimeOffset SubmittedAtUtc { get; set; }
+    public DateTime SubmittedAtUtc { get; set; }
     public required string Symbol { get; set; }
     public OrderSide Side { get; set; }
     public decimal? Quantity { get; set; }

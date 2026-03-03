@@ -11,7 +11,7 @@ public interface IBroker
     Task<bool> CancelOrderAsync(string orderId, CancellationToken cancellationToken = default);
 
     Task<IEnumerable<Position>> GetOpenPositionsAsync(CancellationToken cancellationToken = default);
-    Task<IEnumerable<Trade>> GetTradeHistoryAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Trade>> GetTradeHistoryAsync(DateTime from, DateTime to, CancellationToken cancellationToken = default);
 
     Task<bool> IsMarketOpenAsync(CancellationToken cancellationToken = default);
 }

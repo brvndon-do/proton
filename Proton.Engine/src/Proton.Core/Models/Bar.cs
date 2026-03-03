@@ -10,5 +10,5 @@ public class Bar
     public decimal Volume { get; set; }
     public decimal? Vwap { get; set; }
     public ulong? TradeCount { get; set; }
-    public DateTimeOffset DateTimeUtc { get; set; }
+    public DateTime DateTimeUtc { get; set; }
 }

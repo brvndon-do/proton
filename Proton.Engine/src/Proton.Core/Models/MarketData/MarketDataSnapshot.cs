@@ -3,7 +3,7 @@
 public class MarketDataSnapshot
 {
     public required string Symbol { get; set; }
-    public DateTimeOffset TimestampUtc { get; set; }
+    public DateTime TimestampUtc { get; set; }
     public decimal Open { get; set; }
     public decimal High { get; set; }
     public decimal Low { get; set; }

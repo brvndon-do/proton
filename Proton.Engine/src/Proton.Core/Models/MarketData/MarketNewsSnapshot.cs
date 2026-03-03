@@ -6,5 +6,5 @@ public class MarketNewsSnapshot
     public string? Summary { get; set; }
     public string? Source { get; set; }
     public IEnumerable<string>? Symbols { get; set; }
-    public DateTimeOffset CreatedAtUtc { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
 }

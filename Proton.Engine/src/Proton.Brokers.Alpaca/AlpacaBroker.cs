@@ -41,7 +41,7 @@ public class AlpacaBroker : IBroker
             OrderId = orderResult.OrderId.ToString(),
             Symbol = orderResult.Symbol,
             Quantity = orderResult.Quantity,
-            SubmittedAtUtc = orderResult.SubmittedAtUtc ?? DateTimeOffset.UtcNow,
+            SubmittedAtUtc = orderResult.SubmittedAtUtc ?? DateTime.UtcNow,
             FilledQuantity = orderResult.FilledQuantity,
         };
     }
@@ -56,7 +56,7 @@ public class AlpacaBroker : IBroker
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<Trade>> GetTradeHistoryAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<Trade>> GetTradeHistoryAsync(DateTime from, DateTime to, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

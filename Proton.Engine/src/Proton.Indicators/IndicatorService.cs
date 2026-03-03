@@ -23,7 +23,7 @@ public class IndicatorService : IIndicatorService
             Low = x.Low,
             Close = x.Close,
             Volume = x.Volume,
-            Date = x.DateTimeUtc.DateTime,
+            Date = x.DateTimeUtc,
         });
 
         switch (type)

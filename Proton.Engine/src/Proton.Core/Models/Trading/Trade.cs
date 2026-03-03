@@ -8,6 +8,6 @@ public class Trade
     public OrderSide Side { get; set; }
     public decimal Quantity { get; set; }
     public decimal Price { get; set; }
-    public DateTimeOffset ExecutedAtUtc { get; set; }
+    public DateTime ExecutedAtUtc { get; set; }
     public decimal? Fees { get; set; }
 }

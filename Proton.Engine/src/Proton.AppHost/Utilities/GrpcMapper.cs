@@ -74,7 +74,7 @@ public static class GrpcMapper
         };
 
         if (result.SubmittedAtUtc != default)
-            grpcResult.SubmittedAt = Timestamp.FromDateTime(result.SubmittedAtUtc.UtcDateTime);
+            grpcResult.SubmittedAt = Timestamp.FromDateTime(result.SubmittedAtUtc);
 
         if (result.Status is not null)
             grpcResult.Status = result.Status.ToGrpc();
@@ -97,7 +97,7 @@ public static class GrpcMapper
         };
 
         if (status.UpdatedAtUtc != default)
-            grpcStatus.UpdatedAt = Timestamp.FromDateTime(status.UpdatedAtUtc.UtcDateTime);
+            grpcStatus.UpdatedAt = Timestamp.FromDateTime(status.UpdatedAtUtc);
 
         return grpcStatus;
     }
@@ -156,7 +156,7 @@ public static class GrpcMapper
         GrpcModels.MarketSnapshot grpcSnapshot = new GrpcModels.MarketSnapshot
         {
             Symbol = snapshot.Symbol,
-            Timestamp = Timestamp.FromDateTimeOffset(snapshot.TimestampUtc),
+            Timestamp = Timestamp.FromDateTime(snapshot.TimestampUtc),
             Open = FormatDecimal(snapshot.Open),
             High = FormatDecimal(snapshot.High),
             Low = FormatDecimal(snapshot.Low),
@@ -173,8 +173,8 @@ public static class GrpcMapper
     public static ProtonMarketDataModels.MarketNewsRequest ToCore(this GrpcModels.NewsSnapshotRequest request) => new ProtonMarketDataModels.MarketNewsRequest
     {
         Symbols = request.Symbols,
-        StartInterval = request.StartInterval?.ToDateTimeOffset(),
-        EndInterval = request.EndInterval?.ToDateTimeOffset(),
+        StartInterval = request.StartInterval?.ToDateTime(),
+        EndInterval = request.EndInterval?.ToDateTime(),
         Limit = request.Limit,
     };
 
@@ -185,7 +185,7 @@ public static class GrpcMapper
             Headline = snapshot.Headline,
             Summary = snapshot.Summary,
             Source = snapshot.Source,
-            CreatedAt = Timestamp.FromDateTimeOffset(snapshot.CreatedAtUtc),
+            CreatedAt = Timestamp.FromDateTime(snapshot.CreatedAtUtc),
         };
         grpcSnapshot.Symbols.AddRange(snapshot.Symbols);
 

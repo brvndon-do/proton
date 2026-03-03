@@ -107,7 +107,7 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
         int limit = request.Limit > 0 ? request.Limit : 10;
         IPage<INewsArticle> articles = await _dataClient.ListNewsArticlesAsync(new NewsArticlesRequest(request.Symbols)
         {
-            TimeInterval = new Interval<DateTime>(request.StartInterval?.DateTime, request.EndInterval?.DateTime)
+            TimeInterval = new Interval<DateTime>(request.StartInterval, request.EndInterval)
         }, cancellationToken);
 
         return articles.Items

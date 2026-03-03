@@ -9,5 +9,5 @@ public class NewsArticle
     public string? Author { get; set; }
     public string? Source { get; set; }
     public IEnumerable<string>? Symbols { get; set; }
-    public DateTimeOffset CreatedAtUtc { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
 }

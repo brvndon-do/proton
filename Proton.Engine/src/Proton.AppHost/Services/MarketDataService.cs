@@ -90,7 +90,7 @@ public class MarketDataService(
                 Headline = article.Headline,
                 Summary = article.Summary,
                 Source = article.Source,
-                CreatedAt = Timestamp.FromDateTimeOffset(article.CreatedAtUtc)
+                CreatedAt = Timestamp.FromDateTime(article.CreatedAtUtc)
             };
             snapshot.Symbols.AddRange(article.Symbols);
 

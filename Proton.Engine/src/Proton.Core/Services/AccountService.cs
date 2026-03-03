@@ -16,7 +16,7 @@ public class AccountService(IBroker broker)
         return positions;
     }
 
-    public async Task<IReadOnlyList<Trade>> GetTradeHistoryAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Trade>> GetTradeHistoryAsync(DateTime from, DateTime to, CancellationToken cancellationToken = default)
     {
         List<Trade> trades = [.. await _broker.GetTradeHistoryAsync(from, to, cancellationToken)];
         return trades;
