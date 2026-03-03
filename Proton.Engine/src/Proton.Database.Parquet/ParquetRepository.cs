@@ -6,7 +6,7 @@ namespace Proton.Engine.Database.Parquet;
 
 public class ParquetRepository : IBarRepository
 {
-    private const string PARQUET_FILE_DIR = "output";
+    private static readonly string PARQUET_FILE_DIR = Path.Combine(AppContext.BaseDirectory, "output");
 
     public async Task AddAsync(Bar entity, CancellationToken cancellationToken = default)
     {
@@ -55,7 +55,7 @@ public class ParquetRepository : IBarRepository
             Directory.CreateDirectory(PARQUET_FILE_DIR);
 
         FileStream fs = new FileStream(
-            $"{PARQUET_FILE_DIR}/{filename}",
+            Path.Combine(PARQUET_FILE_DIR, $"{filename}.parquet"),
             FileMode.OpenOrCreate,
             FileAccess.ReadWrite
         );
