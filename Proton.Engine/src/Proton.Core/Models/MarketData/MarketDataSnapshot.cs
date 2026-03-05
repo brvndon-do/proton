@@ -10,6 +10,5 @@ public class MarketDataSnapshot
     public decimal Close { get; set; }
     public decimal Volume { get; set; }
 
-    // TODO: DON'T FORGET TO PROPERLY TYPE THE KEY INSTEAD OF USING A STRING...
-    public required IDictionary<IndicatorType, decimal> Indicators { get; set; }
+    public IDictionary<IndicatorType, decimal>? Indicators { get; set; }
 }

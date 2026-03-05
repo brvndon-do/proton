@@ -7,7 +7,7 @@ using Proton.Engine.Core.Interfaces;
 using Proton.Engine.Core.Models;
 using Proton.Engine.Core.Models.MarketData;
 
-namespace Proton.Engine.AppHost.Services;
+namespace Proton.Engine.AppHost.Services.Grpc;
 
 public class MarketDataService(
     IChannelManager channelManager,
@@ -19,6 +19,8 @@ public class MarketDataService(
     private readonly IMarketDataProvider _marketDataProvider = marketDataProvider;
     private readonly ILogger<MarketDataService> _logger = logger;
 
+    // TODO: this needs to be re-written. this should be reading from redis cache or parquet files, then calculating indicator.
+    //       needs a way to request a new socket stream if symbol isn't already streamed
     public override async Task StreamMarketSnapshot(MarketSnapshotRequest request, IServerStreamWriter<MarketSnapshot> responseStream, ServerCallContext context)
     {
         CancellationToken cancellationToken = context.CancellationToken;
@@ -54,7 +56,7 @@ public class MarketDataService(
 
         await _channelManager.MarketNewsContextChannel.Writer.WriteAsync(new MarketNewsContext
         {
-            MarketNewsChannel = responseChannel,
+            MarketNewsResponseChannel = responseChannel,
         }, cancellationToken);
 
         try

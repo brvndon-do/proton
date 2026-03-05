@@ -3,5 +3,5 @@
 public class MarketDataRequest
 {
     public required IEnumerable<string> Symbols { get; set; }
-    public required IEnumerable<IndicatorType> Indicators { get; set; }
+    public IEnumerable<IndicatorType>? Indicators { get; set; }
 }

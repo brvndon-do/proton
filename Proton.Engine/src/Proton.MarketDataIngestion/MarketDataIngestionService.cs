@@ -10,7 +10,6 @@ namespace Proton.Engine.MarketDataIngestion;
 public class MarketDataIngestion(
     IMarketDataProvider marketDataProvider,
     IChannelManager channelManager,
-    IIndicatorService indicatorService,
     IBarRepository barRepository,
     ILogger<MarketDataIngestion> logger
 ) : BackgroundService
@@ -19,9 +18,10 @@ public class MarketDataIngestion(
 
     private readonly IMarketDataProvider _marketDataProvider = marketDataProvider;
     private readonly IChannelManager _channelManager = channelManager;
-    private readonly IIndicatorService _indicatorService = indicatorService;
     private readonly IBarRepository _barRepository = barRepository;
     private readonly ILogger<MarketDataIngestion> _logger = logger;
+
+    // TODO: save bars to Parquet files AND Redis cache. do not allow client to receive raw socket stream data
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
@@ -39,61 +39,44 @@ public class MarketDataIngestion(
         {
             _logger.LogDebug("Processing symbols: {symbols}", string.Join(',', context.Request.Symbols));
 
-            int maxWindow = context.Request.Indicators.Max(x => _indicatorService.IndicatorWindowValues[x]);
-
             _ = Task.Run(async () =>
             {
-                Dictionary<string, Queue<Bar>> symbolsMap = [];
                 List<Bar> barsToWrite = [];
 
                 await foreach (Bar bar in _marketDataProvider.StreamBarsAsync(context.Request.Symbols, cancellationToken))
                 {
                     string symbol = bar.Symbol;
 
-                    if (!symbolsMap.ContainsKey(symbol))
-                        symbolsMap[symbol] = new Queue<Bar>(maxWindow);
-
-                    Queue<Bar> buffer = symbolsMap[symbol];
-                    if (buffer.Count >= maxWindow)
-                        buffer.Dequeue();
-
-                    buffer.Enqueue(bar);
-
-                    bool allReady = context.Request.Indicators.All(x => buffer.Count >= _indicatorService.IndicatorWindowValues[x]);
-                    if (allReady)
+                    if (context.MarketDataResponseChannel is not null)
                     {
-                        Dictionary<IndicatorType, decimal> indicators = context.Request.Indicators
-                            .ToDictionary(
-                                x => x,
-                                x =>
-                                {
-                                    int window = _indicatorService.IndicatorWindowValues[x];
-                                    IEnumerable<Bar> windowBars = buffer.Skip(buffer.Count - window).Take(window);
-
-                                    return _indicatorService.CalculateIndicator(x, windowBars).Last();
-                                }
-                            );
-
-                        await context.MarketDataResponseChannel.Writer.WriteAsync(new MarketDataSnapshot
+                        try
                         {
-                            Symbol = bar.Symbol,
-                            TimestampUtc = bar.DateTimeUtc,
-                            Open = bar.Open,
-                            High = bar.High,
-                            Low = bar.Low,
-                            Close = bar.Close,
-                            Volume = bar.Volume,
-                            Indicators = indicators,
-                        }, cancellationToken);
+                            await context.MarketDataResponseChannel.Writer.WriteAsync(new MarketDataSnapshot
+                            {
+                                Symbol = bar.Symbol,
+                                TimestampUtc = bar.DateTimeUtc,
+                                Open = bar.Open,
+                                High = bar.High,
+                                Low = bar.Low,
+                                Close = bar.Close,
+                                Volume = bar.Volume,
+                            }, cancellationToken);
+                        }
+                        catch (OperationCanceledException ex)
+                        {
+                            _logger.LogError(ex.Message);
+                        }
                     }
 
                     barsToWrite.Add(bar);
 
                     if (barsToWrite.Count >= LIST_BATCH_SZ)
                     {
-                        await _barRepository.AddRangeAsync(barsToWrite);
+                        await _barRepository.AddRangeAsync(barsToWrite, cancellationToken);
                         barsToWrite.Clear();
                     }
+
+                    // TODO: redis cache implementation here
                 }
             }, cancellationToken);
         }
@@ -109,15 +92,24 @@ public class MarketDataIngestion(
             {
                 await foreach (NewsArticle article in _marketDataProvider.StreamNewsDataAsync(cancellationToken))
                 {
-                    await context.MarketNewsChannel.Writer.WriteAsync(new MarketNewsSnapshot
+                    try
                     {
-                        Headline = article.Headline,
-                        Summary = article.Summary,
-                        Source = article.Source,
-                        CreatedAtUtc = article.CreatedAtUtc,
-                        Symbols = article.Symbols
-                    }, cancellationToken);
+                        await context.MarketNewsResponseChannel.Writer.WriteAsync(new MarketNewsSnapshot
+                        {
+                            Headline = article.Headline,
+                            Summary = article.Summary,
+                            Source = article.Source,
+                            CreatedAtUtc = article.CreatedAtUtc,
+                            Symbols = article.Symbols
+                        }, cancellationToken);
+                    }
+                    catch (OperationCanceledException ex)
+                    {
+                        _logger.LogError(ex.Message);
+                    }
                 }
+
+                // TODO: redis cache implementation here
             }, cancellationToken);
         }
     }

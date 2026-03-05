@@ -1,10 +1,11 @@
 ﻿namespace Proton.Engine.Core.Interfaces.Repositories;
 
-public interface IRepository<T>
+// TODO: don't know if good design pattern, but finna roll with it
+public interface IRepository<TKey, TEntity>
 {
-    Task<T?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
-    IEnumerable<T> GetAllAsync(CancellationToken cancellationToken = default);
-    Task AddAsync(T entity, CancellationToken cancellationToken = default);
-    Task AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default);
-    Task RemoveAsync(string id, CancellationToken cancellationToken = default);
+    Task<TEntity?> GetByKeyAsync(TKey key, CancellationToken cancellationToken = default);
+
+    Task AddAsync(TEntity entity, CancellationToken cancellationToken = default);
+    Task AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default);
+    Task RemoveByKeyAsync(TKey key, CancellationToken cancellationToken = default);
 }

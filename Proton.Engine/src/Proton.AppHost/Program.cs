@@ -1,11 +1,13 @@
 ﻿using Proton.Engine.AppHost.Managers;
-using Proton.Engine.AppHost.Services;
+using Proton.Engine.AppHost.Services.Background;
+using Proton.Engine.AppHost.Services.Grpc;
 using Proton.Engine.Backtesting;
 using Proton.Engine.Brokers.Alpaca;
 using Proton.Engine.Core.Interfaces;
 using Proton.Engine.Core.Interfaces.Repositories;
 using Proton.Engine.Core.Services;
 using Proton.Engine.Database.Parquet;
+using Proton.Engine.Database.Redis;
 using Proton.Engine.Indicators;
 using Proton.Engine.MarketDataIngestion;
 
@@ -28,12 +30,15 @@ builder.Services.AddSingleton<IIndicatorService, IndicatorService>();
 
 // database repos
 builder.Services.AddSingleton<IBarRepository, ParquetRepository>();
+builder.Services.AddSingleton<ICacheRepository, RedisRepository>();
 
 // market data providers
 builder.Services.AddSingleton<IMarketDataProvider, AlpacaMarketDataProvider>();
 
 // modules
-// builder.Services.AddHostedService<BacktestingService>();
+builder.Services.AddHostedService<MarketStarterService>();
+
+builder.Services.AddHostedService<BacktestingService>();
 builder.Services.AddHostedService<MarketDataIngestion>();
 
 WebApplication app = builder.Build();

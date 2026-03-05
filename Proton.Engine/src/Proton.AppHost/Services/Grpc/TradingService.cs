@@ -5,7 +5,7 @@ using Proton.Engine.Core.Services;
 
 using ProtonTradingModels = Proton.Engine.Core.Models.Trading;
 
-namespace Proton.Engine.AppHost.Services;
+namespace Proton.Engine.AppHost.Services.Grpc;
 
 // TODO: incorporate proper logging
 public class TradingService(TradeExecutionService tradeExecutionService, ILogger<TradingService> logger) : Trading.TradingBase

@@ -27,6 +27,7 @@
     <ProjectReference Include="..\Proton.MarketDataIngestion\Proton.MarketDataIngestion.csproj" />
     <ProjectReference Include="..\Proton.Indicators\Proton.Indicators.csproj" />
     <ProjectReference Include="..\Proton.Database.Parquet\Proton.Database.Parquet.csproj" />
+    <ProjectReference Include="..\Proton.Database.Redis\Proton.Database.Redis.csproj" />
   </ItemGroup>
 
 </Project>

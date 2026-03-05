@@ -164,7 +164,7 @@ public static class GrpcMapper
             Volume = FormatDecimal(snapshot.Volume)
         };
 
-        foreach (KeyValuePair<IndicatorType, decimal> kvp in snapshot.Indicators)
+        foreach (KeyValuePair<IndicatorType, decimal> kvp in snapshot.Indicators ?? Enumerable.Empty<KeyValuePair<IndicatorType, decimal>>())
             grpcSnapshot.Indicators.Add(kvp.Key.ToString().ToLower(), kvp.Value.ToString()); // TODO: format the key different instead of using .ToLower()
 
         return grpcSnapshot;
