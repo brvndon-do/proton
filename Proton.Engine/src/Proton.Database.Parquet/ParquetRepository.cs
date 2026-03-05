@@ -10,20 +10,32 @@ public class ParquetRepository : IBarRepository
 
     public async Task AddAsync(Bar entity, CancellationToken cancellationToken = default)
     {
-        using FileStream fs = GetFileStream(entity.Symbol);
+        (FileStream fs, bool exists) = GetFileStream(entity.Symbol);
 
-        await ParquetSerializer.SerializeAsync([entity], fs, cancellationToken: cancellationToken);
+        using (fs)
+            await ParquetSerializer.SerializeAsync(
+                objectInstances: [entity],
+                destination: fs,
+                options: new ParquetSerializerOptions { Append = exists },
+                cancellationToken: cancellationToken
+            );
     }
 
     public async Task AddRangeAsync(IEnumerable<Bar> entities, CancellationToken cancellationToken = default)
     {
         IEnumerable<IGrouping<string, Bar>> sortedEntities = entities.GroupBy(x => x.Symbol);
 
-        foreach (IGrouping<string, Bar> entity in sortedEntities)
+        foreach (IGrouping<string, Bar> bars in sortedEntities)
         {
-            using FileStream fs = GetFileStream(entity.Key);
+            (FileStream fs, bool exists) = GetFileStream(bars.Key);
 
-            await ParquetSerializer.SerializeAsync(entity, fs, cancellationToken: cancellationToken);
+            using (fs)
+                await ParquetSerializer.SerializeAsync(
+                    objectInstances: bars,
+                    destination: fs,
+                    options: new ParquetSerializerOptions { Append = exists },
+                    cancellationToken: cancellationToken
+                );
         }
     }
 
@@ -39,9 +51,10 @@ public class ParquetRepository : IBarRepository
 
     public async Task<IEnumerable<Bar>> ReadBarsAsync(string symbol)
     {
-        using FileStream fs = GetFileStream(symbol);
+        (FileStream fs, _) = GetFileStream(symbol);
 
-        return await ParquetSerializer.DeserializeAsync<Bar>(fs);
+        using (fs)
+            return await ParquetSerializer.DeserializeAsync<Bar>(fs);
     }
 
     public Task RemoveAsync(string id, CancellationToken cancellationToken = default)
@@ -49,17 +62,26 @@ public class ParquetRepository : IBarRepository
         throw new NotImplementedException();
     }
 
-    private FileStream GetFileStream(string filename)
+    private (FileStream fileStream, bool fileExists) GetFileStream(string filename)
     {
         if (!Directory.Exists(PARQUET_FILE_DIR))
             Directory.CreateDirectory(PARQUET_FILE_DIR);
 
+        string path = Path.Combine(PARQUET_FILE_DIR, $"{filename}.parquet");
+        bool exists = false;
+
+        if (File.Exists(path))
+            exists = true;
+
         FileStream fs = new FileStream(
-            Path.Combine(PARQUET_FILE_DIR, $"{filename}.parquet"),
+            path,
             FileMode.OpenOrCreate,
             FileAccess.ReadWrite
         );
 
-        return fs;
+        return (
+            fileStream: fs,
+            fileExists: exists
+        );
     }
 }
