@@ -12,7 +12,7 @@ public class MarketStarterService(IChannelManager channelManager) : BackgroundSe
         // TODO: read from database or configuration file for domain data
         // for now, read from hard-coded list of symbols
 
-        string[] symbols = ["AAPL", "TSLA", "NVDA", "SPY"];
+        string[] symbols = ["AAPL", "TSLA", "NVDA", "META"];
 
         await _channelManager.MarketDataContextChannel.Writer.WriteAsync(new MarketDataContext
         {

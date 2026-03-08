@@ -6,6 +6,7 @@ using Proton.Engine.Brokers.Alpaca;
 using Proton.Engine.Core.Interfaces;
 using Proton.Engine.Core.Interfaces.Repositories;
 using Proton.Engine.Core.Services;
+using Proton.Engine.Core.Services.Mock;
 using Proton.Engine.Database.Parquet;
 using Proton.Engine.Database.Redis;
 using Proton.Engine.Indicators;
@@ -33,7 +34,8 @@ builder.Services.AddSingleton<IBarRepository, ParquetRepository>();
 builder.Services.AddSingleton<ICacheRepository, RedisRepository>();
 
 // market data providers
-builder.Services.AddSingleton<IMarketDataProvider, AlpacaMarketDataProvider>();
+// builder.Services.AddSingleton<IMarketDataProvider, AlpacaMarketDataProvider>();
+builder.Services.AddSingleton<IMarketDataProvider, MockMarketDataProvider>();
 
 // modules
 builder.Services.AddHostedService<MarketStarterService>();

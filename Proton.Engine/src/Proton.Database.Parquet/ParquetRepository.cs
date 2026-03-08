@@ -76,10 +76,7 @@ public class ParquetRepository : IBarRepository
             Directory.CreateDirectory(PARQUET_FILE_DIR);
 
         string path = Path.Combine(PARQUET_FILE_DIR, $"{filename}.parquet");
-        bool exists = false;
-
-        if (File.Exists(path))
-            exists = true;
+        bool exists = File.Exists(path);
 
         FileStream fs = new FileStream(
             path,
