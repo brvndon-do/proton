@@ -2,6 +2,7 @@
 using Proton.Engine.Core.Interfaces;
 using Proton.Engine.Core.Models;
 using Proton.Engine.Core.Models.MarketData;
+using Proton.Engine.Core.Models.Trading;
 
 namespace Proton.Engine.Core.Services.Mock;
 
@@ -89,7 +90,6 @@ public class MockMarketDataProvider : IMarketDataProvider
         }
     }
 
-
     public async IAsyncEnumerable<NewsArticle> StreamNewsDataAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         while (!cancellationToken.IsCancellationRequested)
@@ -115,6 +115,54 @@ public class MockMarketDataProvider : IMarketDataProvider
             Symbols = [symbol],
             CreatedAtUtc = DateTime.UtcNow,
         };
+    }
+
+    public Task<IEnumerable<Bar>> GetHistoricalBarsAsync(IEnumerable<string> symbols, TimeFrame timeFrame, DateTime? from, DateTime? to, int limit = 1000, CancellationToken cancellationToken = default)
+    {
+        List<Bar> bars = [];
+        DateTime start = from ?? DateTime.UtcNow.AddDays(-5);
+        DateTime end = to ?? DateTime.UtcNow;
+        int stepMinutes = timeFrame switch
+        {
+            TimeFrame.Hourly => 60,
+            TimeFrame.Daily => 1440,
+            _ => 1440
+        };
+
+        foreach (string symbol in symbols)
+        {
+            if (!TickerRanges.TryGetValue(symbol, out var range))
+                range = (100m, 200m, 100000, 500000);
+
+            DateTime current = start;
+            int count = 0;
+            while (current <= end && count < limit)
+            {
+                decimal open = RandomDecimal(range.min, range.max);
+                decimal close = RandomDecimal(range.min, range.max);
+                decimal high = Math.Max(open, close) + RandomDecimal(0, 5);
+                decimal low = Math.Min(open, close) - RandomDecimal(0, 5);
+                long volume = RandomLong(range.minVol, range.maxVol);
+                decimal vwap = (open + close + high + low) / 4;
+                int tradeCount = _random.Next(100, 1000);
+
+                bars.Add(new Bar
+                {
+                    Symbol = symbol,
+                    Open = open,
+                    High = high,
+                    Low = low,
+                    Close = close,
+                    Volume = volume,
+                    Vwap = vwap,
+                    TradeCount = (ulong)tradeCount,
+                    DateTimeUtc = current,
+                });
+                current = current.AddMinutes(stepMinutes);
+                count++;
+            }
+        }
+        return Task.FromResult<IEnumerable<Bar>>(bars);
     }
 
     private static decimal RandomDecimal(decimal min, decimal max) => min + (decimal)_random.NextDouble() * (max - min);

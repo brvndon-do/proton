@@ -4,8 +4,8 @@ using Proton.Engine.Core.Interfaces;
 using Alpaca.Markets;
 using Microsoft.Extensions.Options;
 
-using ProtonTradingModels = Proton.Engine.Core.Models.Trading;
 using AlpacaMarkets = Alpaca.Markets;
+using Proton.Engine.Brokers.Alpaca.Utilities;
 
 namespace Proton.Engine.Brokers.Alpaca;
 
@@ -32,8 +32,8 @@ public class AlpacaBroker : IBroker
             symbol: order.Symbol,
             quantity: OrderQuantity.Fractional(order.Quantity),
             side: (AlpacaMarkets.OrderSide)order.Side,
-            type: ConvertOrderType(order.OrderType),
-            duration: ConvertTimeInForce(order.TimeInForce)
+            type: order.OrderType.ToAlpaca(),
+            duration: order.TimeInForce.ToAlpaca()
         ), cancellationToken);
 
         return new OrderResult
@@ -62,22 +62,4 @@ public class AlpacaBroker : IBroker
     }
 
     public async Task<bool> IsMarketOpenAsync(CancellationToken cancellationToken = default) => (await _tradingClient.GetClockAsync(cancellationToken)).IsOpen;
-
-    private AlpacaMarkets.OrderType ConvertOrderType(ProtonTradingModels.OrderType type) => type switch
-    {
-        ProtonTradingModels.OrderType.Market => AlpacaMarkets.OrderType.Market,
-        ProtonTradingModels.OrderType.Limit => AlpacaMarkets.OrderType.Limit,
-        ProtonTradingModels.OrderType.StopLimit => AlpacaMarkets.OrderType.StopLimit,
-        ProtonTradingModels.OrderType.Stop => AlpacaMarkets.OrderType.Stop,
-        _ => AlpacaMarkets.OrderType.Market
-    };
-
-    private AlpacaMarkets.TimeInForce ConvertTimeInForce(ProtonTradingModels.TimeInForce timeInForce) => timeInForce switch
-    {
-        ProtonTradingModels.TimeInForce.Day => AlpacaMarkets.TimeInForce.Day,
-        ProtonTradingModels.TimeInForce.Gtc => AlpacaMarkets.TimeInForce.Gtc,
-        ProtonTradingModels.TimeInForce.Ioc => AlpacaMarkets.TimeInForce.Ioc,
-        ProtonTradingModels.TimeInForce.Fok => AlpacaMarkets.TimeInForce.Fok,
-        _ => AlpacaMarkets.TimeInForce.Day
-    };
 }

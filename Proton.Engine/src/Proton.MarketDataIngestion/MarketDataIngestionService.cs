@@ -14,7 +14,7 @@ public class MarketDataIngestion(
     ILogger<MarketDataIngestion> logger
 ) : BackgroundService
 {
-    private const int LIST_BATCH_SZ = 10;
+    private const int LIST_BATCH_SZ = 100;
 
     private readonly IMarketDataProvider _marketDataProvider = marketDataProvider;
     private readonly IChannelManager _channelManager = channelManager;
@@ -39,46 +39,41 @@ public class MarketDataIngestion(
         {
             _logger.LogDebug("Processing symbols: {symbols}", string.Join(',', context.Request.Symbols));
 
-            _ = Task.Run(async () =>
+            List<Bar> barsToWrite = [];
+
+            await foreach (Bar bar in _marketDataProvider.StreamBarsAsync(context.Request.Symbols, cancellationToken))
             {
-                List<Bar> barsToWrite = [];
-
-                await foreach (Bar bar in _marketDataProvider.StreamBarsAsync(context.Request.Symbols, cancellationToken))
+                if (context.MarketDataResponseChannel is not null)
                 {
-                    string symbol = bar.Symbol;
-
-                    if (context.MarketDataResponseChannel is not null)
+                    try
                     {
-                        try
+                        await context.MarketDataResponseChannel.Writer.WriteAsync(new MarketDataSnapshot
                         {
-                            await context.MarketDataResponseChannel.Writer.WriteAsync(new MarketDataSnapshot
-                            {
-                                Symbol = bar.Symbol,
-                                TimestampUtc = bar.DateTimeUtc,
-                                Open = bar.Open,
-                                High = bar.High,
-                                Low = bar.Low,
-                                Close = bar.Close,
-                                Volume = bar.Volume,
-                            }, cancellationToken);
-                        }
-                        catch (OperationCanceledException ex)
-                        {
-                            _logger.LogError(ex.Message);
-                        }
+                            Symbol = bar.Symbol,
+                            TimestampUtc = bar.DateTimeUtc,
+                            Open = bar.Open,
+                            High = bar.High,
+                            Low = bar.Low,
+                            Close = bar.Close,
+                            Volume = bar.Volume,
+                        }, cancellationToken);
                     }
-
-                    barsToWrite.Add(bar);
-
-                    if (barsToWrite.Count >= LIST_BATCH_SZ)
+                    catch (OperationCanceledException ex)
                     {
-                        await _barRepository.AddRangeAsync(barsToWrite, cancellationToken);
-                        barsToWrite.Clear();
+                        _logger.LogError(ex.Message);
                     }
-
-                    // TODO: redis cache implementation here
                 }
-            }, cancellationToken);
+
+                barsToWrite.Add(bar);
+
+                if (barsToWrite.Count >= LIST_BATCH_SZ)
+                {
+                    await _barRepository.AddRangeAsync(barsToWrite, cancellationToken);
+                    barsToWrite.Clear();
+                }
+
+                // TODO: redis cache implementation here
+            }
         }
     }
 
@@ -88,29 +83,26 @@ public class MarketDataIngestion(
 
         await foreach (MarketNewsContext context in _channelManager.MarketNewsContextChannel.Reader.ReadAllAsync(cancellationToken))
         {
-            _ = Task.Run(async () =>
+            await foreach (NewsArticle article in _marketDataProvider.StreamNewsDataAsync(cancellationToken))
             {
-                await foreach (NewsArticle article in _marketDataProvider.StreamNewsDataAsync(cancellationToken))
+                try
                 {
-                    try
+                    await context.MarketNewsResponseChannel.Writer.WriteAsync(new MarketNewsSnapshot
                     {
-                        await context.MarketNewsResponseChannel.Writer.WriteAsync(new MarketNewsSnapshot
-                        {
-                            Headline = article.Headline,
-                            Summary = article.Summary,
-                            Source = article.Source,
-                            CreatedAtUtc = article.CreatedAtUtc,
-                            Symbols = article.Symbols
-                        }, cancellationToken);
-                    }
-                    catch (OperationCanceledException ex)
-                    {
-                        _logger.LogError(ex.Message);
-                    }
+                        Headline = article.Headline,
+                        Summary = article.Summary,
+                        Source = article.Source,
+                        CreatedAtUtc = article.CreatedAtUtc,
+                        Symbols = article.Symbols
+                    }, cancellationToken);
                 }
+                catch (OperationCanceledException ex)
+                {
+                    _logger.LogError(ex.Message);
+                }
+            }
 
-                // TODO: redis cache implementation here
-            }, cancellationToken);
+            // TODO: redis cache implementation here
         }
     }
 }

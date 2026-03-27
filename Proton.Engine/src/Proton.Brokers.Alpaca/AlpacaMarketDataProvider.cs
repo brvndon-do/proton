@@ -1,10 +1,13 @@
-﻿using Microsoft.Extensions.Options;
-using Proton.Engine.Core.Interfaces;
-using Alpaca.Markets;
-using Proton.Engine.Core.Models;
+﻿using System.Runtime.CompilerServices;
 using System.Threading.Channels;
-using System.Runtime.CompilerServices;
+using Microsoft.Extensions.Options;
+using Proton.Engine.Brokers.Alpaca.Utilities;
+using Proton.Engine.Core.Interfaces;
+using Proton.Engine.Core.Models;
 using Proton.Engine.Core.Models.MarketData;
+using Alpaca.Markets;
+
+using ProtonTrading = Proton.Engine.Core.Models.Trading;
 
 namespace Proton.Engine.Brokers.Alpaca;
 
@@ -42,18 +45,7 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
         {
             sub.Received += (quote) =>
             {
-                _ = channel.Writer.WriteAsync(new Bar
-                {
-                    Symbol = quote.Symbol,
-                    Open = quote.Open,
-                    High = quote.High,
-                    Low = quote.Low,
-                    Close = quote.Close,
-                    Volume = quote.Volume,
-                    Vwap = quote.Vwap,
-                    TradeCount = quote.TradeCount,
-                    DateTimeUtc = quote.TimeUtc,
-                }, cancellationToken);
+                _ = channel.Writer.WriteAsync(quote.ToCore(), cancellationToken);
             };
         }
 
@@ -81,17 +73,7 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
 
         data.Received += article =>
         {
-            _ = channel.Writer.WriteAsync(new NewsArticle
-            {
-                Id = article.Id.ToString(),
-                Headline = article.Headline,
-                Summary = article.Summary,
-                Content = article.Content,
-                Author = article.Author,
-                Source = article.Source,
-                Symbols = article.Symbols,
-                CreatedAtUtc = article.CreatedAtUtc,
-            }, cancellationToken);
+            _ = channel.Writer.WriteAsync(article.ToCore(), cancellationToken);
         };
 
         await _newsStreamingClient.SubscribeAsync(data, cancellationToken);
@@ -112,16 +94,19 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
 
         return articles.Items
             .Take(limit)
-            .Select(x => new NewsArticle
-            {
-                Id = x.Id.ToString(),
-                Headline = x.Headline,
-                Summary = x.Summary,
-                Content = x.Content,
-                Author = x.Author,
-                Source = x.Source,
-                Symbols = x.Symbols,
-                CreatedAtUtc = x.CreatedAtUtc,
-            });
+            .Select(x => x.ToCore());
+    }
+
+    public async Task<IEnumerable<Bar>> GetHistoricalBarsAsync(IEnumerable<string> symbols, ProtonTrading.TimeFrame timeFrame, DateTime? from, DateTime? to, int limit = 1000, CancellationToken cancellationToken = default)
+    {
+        IPage<IBar> historicalBars = await _dataClient.ListHistoricalBarsAsync(new HistoricalBarsRequest(
+            symbols: symbols,
+            timeFrame: timeFrame.ToAlpaca(),
+            timeInterval: new Interval<DateTime>(from, to)
+        ), cancellationToken);
+
+        return historicalBars.Items
+            .Take(limit)
+            .Select(x => x.ToCore());
     }
 }
