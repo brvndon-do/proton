@@ -4,6 +4,7 @@ using Grpc.Core;
 using Proton.Engine.AppHost.Grpc;
 using Proton.Engine.AppHost.Utilities;
 using Proton.Engine.Core.Interfaces;
+using Proton.Engine.Core.Interfaces.Repositories;
 using Proton.Engine.Core.Models;
 using Proton.Engine.Core.Models.MarketData;
 
@@ -12,45 +13,53 @@ namespace Proton.Engine.AppHost.Services.Grpc;
 public class MarketDataService(
     IChannelManager channelManager,
     IMarketDataProvider marketDataProvider,
+    IMarketDataSubscriptionManager marketDataSubscriptionManager,
+    ICacheRepository cacheRepository,
+    IIndicatorService indicatorService,
     ILogger<MarketDataService> logger
 ) : MarketData.MarketDataBase
 {
     private readonly IChannelManager _channelManager = channelManager;
     private readonly IMarketDataProvider _marketDataProvider = marketDataProvider;
+    private readonly IMarketDataSubscriptionManager _marketDataSubscriptionManager = marketDataSubscriptionManager;
+    private readonly ICacheRepository _cacheRepository = cacheRepository;
+    private readonly IIndicatorService _indicatorService = indicatorService;
     private readonly ILogger<MarketDataService> _logger = logger;
 
-    // TODO: this needs to be re-written. this should be reading from redis cache or parquet files, then calculating indicator.
-    //       needs a way to request a new socket stream if symbol isn't already streamed
     public override async Task StreamMarketSnapshot(MarketSnapshotRequest request, IServerStreamWriter<MarketSnapshot> responseStream, ServerCallContext context)
     {
         CancellationToken cancellationToken = context.CancellationToken;
-        Channel<MarketDataSnapshot> responseChannel = Channel.CreateBounded<MarketDataSnapshot>(1_000);
+        List<IndicatorType> requestedIndicators = [.. request.Indicators.Select(x => System.Enum.Parse<IndicatorType>(x))];
 
-        await _channelManager.MarketDataContextChannel.Writer.WriteAsync(new MarketDataContext
+        foreach (string symbol in request.Symbols)
         {
-            Request = request.ToCore(),
-            MarketDataResponseChannel = responseChannel,
-        }, cancellationToken);
+            Channel<Bar> subscriptionChannel = await _marketDataSubscriptionManager.SubscribeAsync(symbol, cancellationToken: cancellationToken);
+            int windowSize = requestedIndicators.Any()
+                ? _indicatorService.IndicatorWindowValues
+                    .Where(x => requestedIndicators.Contains(x.Key))
+                    .Max(x => x.Value)
+                : 0;
+            List<Bar> bars = [.. await _cacheRepository.GetLatestBarsAsync(symbol, windowSize, cancellationToken)];
 
-        try
-        {
-            await foreach (MarketDataSnapshot snapshot in responseChannel.Reader.ReadAllAsync(cancellationToken))
+            try
             {
-                await responseStream.WriteAsync(snapshot.ToGrpc(), cancellationToken);
+                await foreach (Bar bar in subscriptionChannel.Reader.ReadAllAsync(cancellationToken))
+                {
+                    MarketDataSnapshot snapshot = BuildMarketDataSnapshot(bar, bars, requestedIndicators);
+                    await responseStream.WriteAsync(snapshot.ToGrpc(), cancellationToken);
+                }
             }
-        }
-        catch (OperationCanceledException ex)
-        {
-            _logger.LogInformation(ex.Message); // TODO: better logging
-        }
-        catch (RpcException ex)
-        {
-            _logger.LogInformation(ex.Message); // TODO: better logging
+            finally
+            {
+                await _marketDataSubscriptionManager.UnsubscribeAsync(symbol, cancellationToken);
+            }
         }
     }
 
     public override async Task StreamNewsSnapshot(Empty request, IServerStreamWriter<NewsSnapshot> responseStream, ServerCallContext context)
     {
+        // TODO: probably read from redis cache as well instead of directly streaming to client
+
         CancellationToken cancellationToken = context.CancellationToken;
         Channel<MarketNewsSnapshot> responseChannel = Channel.CreateBounded<MarketNewsSnapshot>(100);
 
@@ -98,5 +107,28 @@ public class MarketDataService(
 
             await responseStream.WriteAsync(snapshot, cancellationToken);
         }
+    }
+
+    private MarketDataSnapshot BuildMarketDataSnapshot(Bar bar, List<Bar> bars, List<IndicatorType> requestedIndicators)
+    {
+        Dictionary<IndicatorType, decimal> indicators = [];
+
+        foreach (IndicatorType type in requestedIndicators)
+        {
+            IEnumerable<decimal> values = _indicatorService.CalculateIndicator(type, bars);
+            indicators[type] = values.LastOrDefault();
+        }
+
+        return new MarketDataSnapshot
+        {
+            Symbol = bar.Symbol,
+            TimestampUtc = bar.DateTimeUtc,
+            Open = bar.Open,
+            High = bar.High,
+            Low = bar.Low,
+            Close = bar.Close,
+            Volume = bar.Volume,
+            Indicators = indicators
+        };
     }
 }

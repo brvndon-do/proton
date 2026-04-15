@@ -1,5 +1,4 @@
 ﻿using Proton.Engine.AppHost.Managers;
-using Proton.Engine.AppHost.Services.Background;
 using Proton.Engine.AppHost.Services.Grpc;
 using Proton.Engine.Backtesting;
 using Proton.Engine.Brokers.Alpaca;
@@ -11,6 +10,7 @@ using Proton.Engine.Database.Parquet;
 using Proton.Engine.Database.Redis;
 using Proton.Engine.Indicators;
 using Proton.Engine.MarketDataIngestion;
+using StackExchange.Redis;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -30,16 +30,17 @@ builder.Services.AddSingleton<TradeExecutionService>();
 builder.Services.AddSingleton<IIndicatorService, IndicatorService>();
 
 // database repos
+builder.Services.AddSingleton<IConnectionMultiplexer>(
+    ConnectionMultiplexer.Connect(builder.Configuration["RedisOptions:Configuration"] ?? throw new ArgumentNullException("RedisOptions:Configuration must be set"))
+);
 builder.Services.AddSingleton<IBarRepository, ParquetRepository>();
 builder.Services.AddSingleton<ICacheRepository, RedisRepository>();
 
 // market data providers
-// builder.Services.AddSingleton<IMarketDataProvider, AlpacaMarketDataProvider>();
-builder.Services.AddSingleton<IMarketDataProvider, MockMarketDataProvider>();
+builder.Services.AddSingleton<IMarketDataProvider, AlpacaMarketDataProvider>();
+// builder.Services.AddSingleton<IMarketDataProvider, MockMarketDataProvider>();
 
 // modules
-builder.Services.AddHostedService<MarketStarterService>();
-
 builder.Services.AddHostedService<BacktestingService>();
 builder.Services.AddHostedService<MarketDataIngestion>();
 

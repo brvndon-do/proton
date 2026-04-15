@@ -1,27 +1,50 @@
-﻿using Proton.Engine.Core.Interfaces.Repositories;
+﻿using System.Text.Json;
+using Proton.Engine.Core.Interfaces.Repositories;
 using Proton.Engine.Core.Models;
+using StackExchange.Redis;
 
 namespace Proton.Engine.Database.Redis;
 
-public class RedisRepository : ICacheRepository
+public class RedisRepository(IConnectionMultiplexer connectionMultiplexer) : ICacheRepository
 {
-    public Task AddAsync(Bar entity, CancellationToken cancellationToken = default)
+    private readonly IDatabase _db = connectionMultiplexer.GetDatabase();
+
+    private static string Key(string symbol) => $"bars:{symbol}";
+    private static double Score(Bar bar) => bar.DateTimeUtc.Ticks;
+
+    public async Task<IEnumerable<Bar>> GetLatestBarsAsync(string symbol, int window, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (window <= 0)
+            return [];
+
+        RedisValue[] results = await _db.SortedSetRangeByRankAsync(
+            Key(symbol),
+            start: 0,
+            stop: window - 1,
+            order: Order.Descending
+        );
+
+        return results
+            .Select(x => JsonSerializer.Deserialize<Bar>(x.ToString())!)
+            .Reverse();
     }
 
-    public Task AddRangeAsync(IEnumerable<Bar> entities, CancellationToken cancellationToken = default)
+    public async Task AddAsync(Bar entity, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        string json = JsonSerializer.Serialize(entity);
+        await _db.SortedSetAddAsync(Key(entity.Symbol), json, Score(entity));
     }
 
-    public Task<Bar?> GetByKeyAsync(string key, CancellationToken cancellationToken = default)
+    public async Task AddRangeAsync(IEnumerable<Bar> entities, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        IEnumerable<IGrouping<string, Bar>> sortedEntities = entities.GroupBy(x => x.Symbol);
+
+        foreach (IGrouping<string, Bar> bars in sortedEntities)
+        {
+            SortedSetEntry[] entries = [.. bars.Select(x => new SortedSetEntry(JsonSerializer.Serialize(x), Score(x)))];
+            await _db.SortedSetAddAsync(Key(bars.Key), entries);
+        }
     }
 
-    public Task RemoveByKeyAsync(string key, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
+    public async Task RemoveByKeyAsync(string key, CancellationToken cancellationToken = default) => await _db.KeyDeleteAsync(Key(key));
 }

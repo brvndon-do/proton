@@ -8,18 +8,6 @@ public class ParquetRepository : IBarRepository
 {
     private static readonly string PARQUET_FILE_DIR = Path.Combine(AppContext.BaseDirectory, "output");
 
-    public async Task<Bar?> GetByKeyAsync(string key, CancellationToken cancellationToken = default)
-    {
-        (FileStream fs, _) = GetFileStream(key);
-
-        using (fs)
-        {
-            IList<Bar> bars = await ParquetSerializer.DeserializeAsync<Bar>(fs);
-
-            return bars.First(); // TODO: implementation's sake; this is goofy.
-        }
-    }
-
     public async Task AddAsync(Bar entity, CancellationToken cancellationToken = default)
     {
         (FileStream fs, bool exists) = GetFileStream(entity.Symbol);
@@ -53,12 +41,12 @@ public class ParquetRepository : IBarRepository
 
     public async Task RemoveByKeyAsync(string key, CancellationToken cancellationToken = default)
     {
-        (FileStream fs, bool fileExists) = GetFileStream(key);
+        (FileStream _, bool fileExists) = GetFileStream(key);
 
         if (!fileExists)
             return;
 
-        // TODO: this is just for implementation's sake, but seems dangerous. should probably remove.
+        // TODO: seems dangerous to remove file fully. look into different ways of preserving.
         File.Delete(Path.Combine(PARQUET_FILE_DIR, $"{key}.parquet"));
     }
 

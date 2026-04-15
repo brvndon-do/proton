@@ -1,0 +1,16 @@
+{
+  "languages": {
+    "CSharp": {
+      "use_on_type_format": false,
+    },
+  },
+  "lsp": {
+    "roslyn": {
+      "settings": {
+        "csharp|auto_insert": {
+          "dotnet_enable_auto_insert": false,
+        },
+      },
+    },
+  },
+}

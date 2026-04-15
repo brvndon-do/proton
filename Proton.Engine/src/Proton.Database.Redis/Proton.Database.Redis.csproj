@@ -11,4 +11,8 @@
     <ProjectReference Include="..\Proton.Core\Proton.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
+  </ItemGroup>
+
 </Project>

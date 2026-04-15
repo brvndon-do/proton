@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Proton.Engine.Core.Interfaces;
-using Proton.Engine.Core.Interfaces.Repositories;
 using Proton.Engine.Core.Models;
 using Proton.Engine.Core.Models.MarketData;
 
@@ -10,71 +9,32 @@ namespace Proton.Engine.MarketDataIngestion;
 public class MarketDataIngestion(
     IMarketDataProvider marketDataProvider,
     IChannelManager channelManager,
-    IBarRepository barRepository,
+    IMarketDataSubscriptionManager marketDataSubscriptionManager,
     ILogger<MarketDataIngestion> logger
 ) : BackgroundService
 {
-    private const int LIST_BATCH_SZ = 100;
-
     private readonly IMarketDataProvider _marketDataProvider = marketDataProvider;
     private readonly IChannelManager _channelManager = channelManager;
-    private readonly IBarRepository _barRepository = barRepository;
+    private readonly IMarketDataSubscriptionManager _marketDataSubscriptionManager = marketDataSubscriptionManager;
     private readonly ILogger<MarketDataIngestion> _logger = logger;
-
-    // TODO: save bars to Parquet files AND Redis cache. do not allow client to receive raw socket stream data
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         await Task.WhenAll(
-            ProcessMarketDataContextsAsync(cancellationToken),
+            ProcessWarmupSymbolSubscriptions(cancellationToken),
             ProcessMarketNewsContextsAsync(cancellationToken)
         );
     }
 
-    private async Task ProcessMarketDataContextsAsync(CancellationToken cancellationToken)
+    private async Task ProcessWarmupSymbolSubscriptions(CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Processing market data...");
+        _logger.LogDebug("Processing warmup symbols...");
 
-        await foreach (MarketDataContext context in _channelManager.MarketDataContextChannel.Reader.ReadAllAsync(cancellationToken))
-        {
-            _logger.LogDebug("Processing symbols: {symbols}", string.Join(',', context.Request.Symbols));
+        // TODO: read from different source instead of hard code
+        string[] symbols = ["AAPL", "TSLA", "NVDA", "META"];
 
-            List<Bar> barsToWrite = [];
-
-            await foreach (Bar bar in _marketDataProvider.StreamBarsAsync(context.Request.Symbols, cancellationToken))
-            {
-                if (context.MarketDataResponseChannel is not null)
-                {
-                    try
-                    {
-                        await context.MarketDataResponseChannel.Writer.WriteAsync(new MarketDataSnapshot
-                        {
-                            Symbol = bar.Symbol,
-                            TimestampUtc = bar.DateTimeUtc,
-                            Open = bar.Open,
-                            High = bar.High,
-                            Low = bar.Low,
-                            Close = bar.Close,
-                            Volume = bar.Volume,
-                        }, cancellationToken);
-                    }
-                    catch (OperationCanceledException ex)
-                    {
-                        _logger.LogError(ex.Message);
-                    }
-                }
-
-                barsToWrite.Add(bar);
-
-                if (barsToWrite.Count >= LIST_BATCH_SZ)
-                {
-                    await _barRepository.AddRangeAsync(barsToWrite, cancellationToken);
-                    barsToWrite.Clear();
-                }
-
-                // TODO: redis cache implementation here
-            }
-        }
+        foreach (string symbol in symbols)
+            await _marketDataSubscriptionManager.SubscribeAsync(symbol, cancellationToken: cancellationToken);
     }
 
     private async Task ProcessMarketNewsContextsAsync(CancellationToken cancellationToken)

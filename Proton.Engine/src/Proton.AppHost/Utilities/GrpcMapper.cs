@@ -42,6 +42,7 @@ public static class GrpcMapper
         return parsed;
     }
     #endregion
+
     #region Trading
     public static ProtonTradingModels.TradeOrder ToCore(this GrpcModels.TradeOrder order)
     {
