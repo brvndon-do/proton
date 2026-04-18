@@ -8,6 +8,7 @@
     "env": {
       "ASPNETCORE_ENVIRONMENT": "Development",
     },
+    "args": ["--launch-profile", "https"],
     "build": {
       "command": "dotnet",
       "args": [

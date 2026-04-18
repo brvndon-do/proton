@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Proton.Engine.Brokers.Alpaca.Utilities;
 using Proton.Engine.Core.Interfaces;
 using Proton.Engine.Core.Models;
@@ -17,9 +18,17 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
     private readonly IAlpacaDataStreamingClient _dataStreamingClient;
     private readonly IAlpacaNewsStreamingClient _newsStreamingClient;
 
-    public AlpacaMarketDataProvider(IOptions<AlpacaOptions> options)
+    // TODO: uncomment, for now this isn't needed
+    // private readonly ILogger<AlpacaMarketDataProvider> _logger;
+
+    private readonly Channel<Bar> _barChannel;
+    private readonly Channel<NewsArticle> _newsChannel;
+    private bool _isConnected = false;
+
+    public AlpacaMarketDataProvider(IOptions<AlpacaOptions> options, ILogger<AlpacaMarketDataProvider> logger)
     {
         AlpacaOptions _options = options.Value;
+        // _logger = logger;
 
         IEnvironment tradingEnvironment = _options.IsPaperAccount
             ? Environments.Paper
@@ -29,59 +38,74 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
         _dataClient = tradingEnvironment.GetAlpacaDataClient(key);
         _dataStreamingClient = tradingEnvironment.GetAlpacaDataStreamingClient(key);
         _newsStreamingClient = tradingEnvironment.GetAlpacaNewsStreamingClient(key);
+
+        _barChannel = Channel.CreateBounded<Bar>(1_000);
+        _newsChannel = Channel.CreateBounded<NewsArticle>(1_000);
     }
 
-    public async IAsyncEnumerable<Bar> StreamBarsAsync(IEnumerable<string> symbols, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async Task ConnectAsync(CancellationToken cancellationToken = default)
     {
-        AuthStatus status = await _dataStreamingClient.ConnectAndAuthenticateAsync(cancellationToken);
+        if (_isConnected)
+            return;
 
-        if (status != AuthStatus.Authorized)
-            yield break;
+        AuthStatus dataStatus = await _dataStreamingClient.ConnectAndAuthenticateAsync(cancellationToken);
+        AuthStatus newsStatus = await _newsStreamingClient.ConnectAndAuthenticateAsync(cancellationToken);
 
-        Channel<Bar> channel = Channel.CreateBounded<Bar>(1_000);
-        IEnumerable<IAlpacaDataSubscription<IBar>> data = symbols.Select(_dataStreamingClient.GetDailyBarSubscription);
+        if (dataStatus != AuthStatus.Authorized || newsStatus != AuthStatus.Authorized)
+            throw new InvalidOperationException("Failed to authenicate");
 
-        foreach (IAlpacaDataSubscription<IBar> sub in data)
+        _isConnected = true;
+    }
+
+    public async Task DisconnectAsync(CancellationToken cancellationToken = default)
+    {
+        await _dataStreamingClient.DisconnectAsync();
+        await _newsStreamingClient.DisconnectAsync();
+
+        _barChannel.Writer.TryComplete();
+        _newsChannel.Writer.TryComplete();
+
+        _isConnected = false;
+    }
+
+    public async Task SubscribeToSymbolAsync(string symbol, CancellationToken cancellationToken = default)
+    {
+        IAlpacaDataSubscription<IBar> dataSubscription = _dataStreamingClient.GetDailyBarSubscription(symbol);
+        IAlpacaDataSubscription<INewsArticle> newsSubscription = _newsStreamingClient.GetNewsSubscription(symbol);
+
+        dataSubscription.Received += bar =>
         {
-            sub.Received += (quote) =>
-            {
-                _ = channel.Writer.WriteAsync(quote.ToCore(), cancellationToken);
-            };
-        }
+            _barChannel.Writer.TryWrite(bar.ToCore());
+        };
 
-        await _dataStreamingClient.SubscribeAsync(data, cancellationToken);
-
-        await foreach (Bar bar in channel.Reader.ReadAllAsync(cancellationToken))
+        newsSubscription.Received += news =>
         {
+            _newsChannel.Writer.TryWrite(news.ToCore());
+        };
+
+        await _dataStreamingClient.SubscribeAsync(dataSubscription, cancellationToken);
+        await _newsStreamingClient.SubscribeAsync(newsSubscription, cancellationToken);
+    }
+
+    public async Task UnsubscribeToSymbolAsync(string symbol, CancellationToken cancellationToken = default)
+    {
+        IAlpacaDataSubscription<IBar> dataSubscription = _dataStreamingClient.GetDailyBarSubscription(symbol);
+        IAlpacaDataSubscription<INewsArticle> newsSubscription = _newsStreamingClient.GetNewsSubscription(symbol);
+
+        await _dataStreamingClient.UnsubscribeAsync(dataSubscription, cancellationToken);
+        await _newsStreamingClient.UnsubscribeAsync(newsSubscription, cancellationToken);
+    }
+
+    public async IAsyncEnumerable<Bar> StreamBarsAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        await foreach (Bar bar in _barChannel.Reader.ReadAllAsync(cancellationToken))
             yield return bar;
-        }
     }
 
     public async IAsyncEnumerable<NewsArticle> StreamNewsDataAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        AuthStatus status = await _newsStreamingClient.ConnectAndAuthenticateAsync(cancellationToken);
-
-        if (status != AuthStatus.Authorized)
-            yield break;
-
-        Channel<NewsArticle> channel = Channel.CreateBounded<NewsArticle>(new BoundedChannelOptions(100)
-        {
-            FullMode = BoundedChannelFullMode.DropOldest, // NOTE: news market data is still good for context, but prob not as impactful? ok to drop i think.
-        });
-
-        IAlpacaDataSubscription<INewsArticle> data = _newsStreamingClient.GetNewsSubscription();
-
-        data.Received += article =>
-        {
-            _ = channel.Writer.WriteAsync(article.ToCore(), cancellationToken);
-        };
-
-        await _newsStreamingClient.SubscribeAsync(data, cancellationToken);
-
-        await foreach (NewsArticle article in channel.Reader.ReadAllAsync(cancellationToken))
-        {
-            yield return article;
-        }
+        await foreach (NewsArticle news in _newsChannel.Reader.ReadAllAsync(cancellationToken))
+            yield return news;
     }
 
     public async Task<IEnumerable<NewsArticle>> GetNewsDataAsync(MarketNewsRequest request, CancellationToken cancellationToken = default)

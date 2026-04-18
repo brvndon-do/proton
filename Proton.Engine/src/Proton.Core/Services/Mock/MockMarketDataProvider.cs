@@ -6,7 +6,8 @@ using Proton.Engine.Core.Models.Trading;
 
 namespace Proton.Engine.Core.Services.Mock;
 
-public class MockMarketDataProvider : IMarketDataProvider
+// TODO: re-implement IMarketDataProvider
+public class MockMarketDataProvider
 {
     private static readonly Dictionary<string, (decimal min, decimal max, long minVol, long maxVol)> TickerRanges = new()
     {

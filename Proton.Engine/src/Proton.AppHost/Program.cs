@@ -28,6 +28,7 @@ builder.Services.AddSingleton<IBroker, AlpacaBroker>();
 // core services
 builder.Services.AddSingleton<TradeExecutionService>();
 builder.Services.AddSingleton<IIndicatorService, IndicatorService>();
+builder.Services.AddSingleton<IMarketDataSubscriptionManager, MarketDataSubscriptionManager>();
 
 // database repos
 builder.Services.AddSingleton<IConnectionMultiplexer>(
@@ -48,6 +49,13 @@ WebApplication app = builder.Build();
 
 app.MapGrpcService<TradingService>();
 app.MapGrpcService<MarketDataService>();
+
+// initial calls
+IEnumerable<IMarketDataProvider> providers = app.Services.GetServices<IMarketDataProvider>();
+foreach (IMarketDataProvider provider in providers)
+{
+    await provider.ConnectAsync();
+}
 
 app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
 

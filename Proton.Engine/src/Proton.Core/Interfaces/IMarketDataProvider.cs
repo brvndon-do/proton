@@ -6,8 +6,16 @@ namespace Proton.Engine.Core.Interfaces;
 
 public interface IMarketDataProvider
 {
-    // streaming data
-    IAsyncEnumerable<Bar> StreamBarsAsync(IEnumerable<string> symbols, CancellationToken cancellationToken = default);
+    // market operations
+    Task ConnectAsync(CancellationToken cancellationToken = default);
+    Task DisconnectAsync(CancellationToken cancellationToken = default);
+
+    // subscription
+    Task SubscribeToSymbolAsync(string symbol, CancellationToken cancellationToken = default);
+    Task UnsubscribeToSymbolAsync(string symbol, CancellationToken cancellationToken = default);
+
+    // streaming
+    IAsyncEnumerable<Bar> StreamBarsAsync(CancellationToken cancellationToken = default);
     IAsyncEnumerable<NewsArticle> StreamNewsDataAsync(CancellationToken cancellationToken = default);
 
     // fetching
