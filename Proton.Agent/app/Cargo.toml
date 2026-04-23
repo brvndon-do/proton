@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+grpc = { path = "../grpc" }
 console = "0.16.3"
 dialoguer = "0.12.0"

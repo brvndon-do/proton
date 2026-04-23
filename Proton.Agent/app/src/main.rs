@@ -1,9 +1,16 @@
 use console::style;
+use dialoguer::Input;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let name: String = Input::new()
+        .with_prompt("Hello, what's your name?")
+        .interact_text()?;
+
     println!(
-        "Hello {}, from rust{}",
-        style("proton").cyan(),
-        style("!!!").red().bold()
+        "{}, {}!",
+        style("Hello").yellow().italic(),
+        style(name).on_green().underlined()
     );
+
+    Ok(())
 }

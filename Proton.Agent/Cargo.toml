@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "app",
+    "grpc",
+]
+resolver = "3"
