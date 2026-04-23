@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using System.Threading.Channels;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Proton.Engine.Core.Interfaces;
 using Proton.Engine.Core.Models;
@@ -21,7 +22,16 @@ public class MarketDataIngestion(
         // TODO: read from different source instead of hard code
         string[] symbols = ["AAPL", "TSLA", "NVDA", "META"];
 
+        // NOTE: drain unused channels
         foreach (string symbol in symbols)
-            await _marketDataSubscriptionManager.SubscribeAsync(symbol, cancellationToken: cancellationToken);
+        {
+            Channel<Bar> channel = await _marketDataSubscriptionManager.SubscribeAsync(symbol, cancellationToken: cancellationToken);
+
+            // TODO: maybe better way to do this?
+            _ = Task.Run(async () =>
+            {
+                await foreach (Bar _ in channel.Reader.ReadAllAsync(cancellationToken)) { }
+            }, cancellationToken);
+        }
     }
 }

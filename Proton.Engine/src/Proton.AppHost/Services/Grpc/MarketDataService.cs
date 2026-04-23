@@ -22,36 +22,33 @@ public class MarketDataService(
     private readonly IIndicatorService _indicatorService = indicatorService;
     private readonly ILogger<MarketDataService> _logger = logger;
 
-    public override async Task StreamMarketSnapshot(MarketSnapshotRequest request, IServerStreamWriter<MarketSnapshot> responseStream, ServerCallContext context)
+    public override async Task StreamMarketSnapshot(
+        MarketSnapshotRequest request,
+        IServerStreamWriter<MarketSnapshot> responseStream,
+        ServerCallContext context
+    )
     {
+        Channel<MarketDataSnapshot> marketDataChannel = Channel.CreateBounded<MarketDataSnapshot>(new BoundedChannelOptions(1_000)
+        {
+            SingleReader = true,
+            SingleWriter = false,
+            FullMode = BoundedChannelFullMode.Wait
+        });
         CancellationToken cancellationToken = context.CancellationToken;
         List<IndicatorType> requestedIndicators = [.. request.Indicators.Select(x => System.Enum.Parse<IndicatorType>(x))];
 
-        foreach (string symbol in request.Symbols)
+        List<Task> producerTasks = [.. request.Symbols.Select(x => ProcessSymbol(x, requestedIndicators, marketDataChannel.Writer, cancellationToken))];
+
+        Task completionTask = CompleteWriterWhenDone(producerTasks, marketDataChannel.Writer);
+
+        try
         {
-            _logger.LogInformation($"Subscribing to {symbol}");
-
-            Channel<Bar> subscriptionChannel = await _marketDataSubscriptionManager.SubscribeAsync(symbol, cancellationToken: cancellationToken);
-            int windowSize = requestedIndicators.Any()
-                ? _indicatorService.IndicatorWindowValues
-                    .Where(x => requestedIndicators.Contains(x.Key))
-                    .Max(x => x.Value)
-                : 0;
-            List<Bar> bars = [.. await _cacheRepository.GetLatestBarsAsync(symbol, windowSize, cancellationToken)];
-
-            try
-            {
-                await foreach (Bar bar in subscriptionChannel.Reader.ReadAllAsync(cancellationToken))
-                {
-                    MarketDataSnapshot snapshot = BuildMarketDataSnapshot(bar, bars, requestedIndicators);
-                    await responseStream.WriteAsync(snapshot.ToGrpc(), cancellationToken);
-                }
-            }
-            finally
-            {
-                _logger.LogInformation($"Unsubscribed from {symbol}");
-                await _marketDataSubscriptionManager.UnsubscribeAsync(symbol, cancellationToken);
-            }
+            await foreach (MarketDataSnapshot snapshot in marketDataChannel.Reader.ReadAllAsync(cancellationToken))
+                await responseStream.WriteAsync(snapshot.ToGrpc(), cancellationToken);
+        }
+        finally
+        {
+            await completionTask;
         }
     }
 
@@ -59,6 +56,62 @@ public class MarketDataService(
     public override async Task StreamNewsSnapshot(Empty request, IServerStreamWriter<NewsSnapshot> responseStream, ServerCallContext context) => throw new NotImplementedException();
 
     public override async Task GetNewsSnapshot(NewsSnapshotRequest request, IServerStreamWriter<NewsSnapshot> responseStream, ServerCallContext context) => throw new NotImplementedException();
+
+    private static async Task CompleteWriterWhenDone(List<Task> producerTasks, ChannelWriter<MarketDataSnapshot> writer)
+    {
+        try
+        {
+            await Task.WhenAll(producerTasks);
+            writer.TryComplete();
+        }
+        catch (Exception ex)
+        {
+            writer.TryComplete(ex);
+        }
+    }
+
+    private async Task ProcessSymbol(
+        string symbol,
+        List<IndicatorType> requestedIndicators,
+        ChannelWriter<MarketDataSnapshot> writer,
+        CancellationToken cancellationToken
+    )
+    {
+        _logger.LogInformation($"Subscribing to {symbol}");
+
+        Channel<Bar> subscriptionChannel = await _marketDataSubscriptionManager.SubscribeAsync(symbol, cancellationToken: cancellationToken);
+        int windowSize = requestedIndicators.Any()
+            ? _indicatorService.IndicatorWindowValues
+                .Where(x => requestedIndicators.Contains(x.Key))
+                .Max(x => x.Value)
+            : 0;
+        List<Bar> bars = [.. await _cacheRepository.GetLatestBarsAsync(symbol, windowSize, cancellationToken)];
+
+        try
+        {
+            await foreach (Bar bar in subscriptionChannel.Reader.ReadAllAsync(cancellationToken))
+            {
+                if (windowSize > 0)
+                {
+                    bars.Add(bar);
+                    if (bars.Count > windowSize)
+                        bars.RemoveAt(0);
+                }
+
+                MarketDataSnapshot snapshot = BuildMarketDataSnapshot(bar, bars, requestedIndicators);
+                await writer.WriteAsync(snapshot, cancellationToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Client canceled stream");
+        }
+        finally
+        {
+            _logger.LogInformation($"Unsubscribed from {symbol}");
+            await _marketDataSubscriptionManager.UnsubscribeAsync(symbol, CancellationToken.None);
+        }
+    }
 
     private MarketDataSnapshot BuildMarketDataSnapshot(Bar bar, List<Bar> bars, List<IndicatorType> requestedIndicators)
     {

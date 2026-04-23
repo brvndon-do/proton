@@ -36,6 +36,7 @@ public class MarketDataSubscriptionManager(
         });
 
         bool isNewSubscription = false;
+        // NOTE: potential race-condition, LOOK INTO! use Lazy<T>?
         SymbolSubscription subscription = _activeSubscriptions.GetOrAdd(symbol, _ =>
         {
             isNewSubscription = true;
@@ -116,7 +117,7 @@ public class MarketDataSubscriptionManager(
             foreach (List<Bar> buffer in batchBuffers.Values)
             {
                 if (buffer.Any())
-                    await _barRepository.AddRangeAsync(buffer, cancellationToken);
+                    await _barRepository.AddRangeAsync(buffer, CancellationToken.None);
             }
 
             foreach (SymbolSubscription subscription in _activeSubscriptions.Values)
@@ -131,7 +132,7 @@ public class MarketDataSubscriptionManager(
 
     public async Task UnsubscribeAsync(string symbol, CancellationToken cancellationToken = default)
     {
-        if (_activeSubscriptions.TryGetValue(symbol, out SymbolSubscription? subscription) || subscription is null)
+        if (!_activeSubscriptions.TryGetValue(symbol, out SymbolSubscription? subscription) || subscription is null)
         {
             _logger.LogInformation("{symbol} has already been unsubscribed", symbol);
             return;
@@ -140,11 +141,12 @@ public class MarketDataSubscriptionManager(
         int remaining = Interlocked.Decrement(ref subscription!.ActiveSubscribersCount);
         if (remaining <= 0)
         {
-            _logger.LogInformation("Last subscriber for {symbol} disconnected, stopping upstream connection", symbol);
+            _activeSubscriptions.TryRemove(symbol, out _);
             await _marketDataProvider.DisconnectAsync(cancellationToken);
         }
 
-        await _marketDataProvider.UnsubscribeToSymbolAsync(symbol, cancellationToken);
+        if (_activeSubscriptions.IsEmpty)
+            await _marketDataProvider.UnsubscribeToSymbolAsync(symbol, cancellationToken);
     }
 
     private async Task BackfillIfNeededAsync(SymbolSubscription subscription)
