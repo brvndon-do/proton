@@ -2,9 +2,17 @@ use console::style;
 use dialoguer::Input;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let name: String = Input::new()
-        .with_prompt("Hello, what's your name?")
-        .interact_text()?;
+    let mut name: String = String::from("");
+
+    loop {
+        if !name.trim().is_empty() {
+            break;
+        }
+
+        name = Input::new()
+            .with_prompt("Hello, what's your name?")
+            .interact_text()?;
+    }
 
     println!(
         "{}, {}!",

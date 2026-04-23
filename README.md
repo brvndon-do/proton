@@ -11,6 +11,14 @@ Proton is split into two primary domains:
 
 More information can be found in the [design documentation](./docs/design_documentation.md).
 
+## Debugging
+
+For VS Code users, refer to `.vscode/launch.json` for C# debugging configurations. Rust debugging is needed to be added.
+
+For Zed users, refer to `.zed/debug.json` for C# debugging configurations. Rust debugging is natively supported in Zed.
+
+Ensure that Docker is running: `docker compose up -d`
+
 ## Core Components
 
 ### Market Ingestion

@@ -209,13 +209,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "grpc"
-version = "0.1.0"
-dependencies = [
- "tonic",
-]
-
-[[package]]
 name = "h2"
 version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -495,7 +488,14 @@ version = "0.1.0"
 dependencies = [
  "console",
  "dialoguer",
- "grpc",
+ "proton_agent_grpc",
+]
+
+[[package]]
+name = "proton_agent_grpc"
+version = "0.1.0"
+dependencies = [
+ "tonic",
 ]
 
 [[package]]

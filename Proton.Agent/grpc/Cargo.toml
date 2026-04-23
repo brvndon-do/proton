@@ -1,5 +1,5 @@
 [package]
-name = "grpc"
+name = "proton_agent_grpc"
 version = "0.1.0"
 edition = "2024"
 
