@@ -11,16 +11,12 @@ using Proton.Engine.Core.Models.MarketData;
 namespace Proton.Engine.AppHost.Services.Grpc;
 
 public class MarketDataService(
-    IChannelManager channelManager,
-    IMarketDataProvider marketDataProvider,
     IMarketDataSubscriptionManager marketDataSubscriptionManager,
     ICacheRepository cacheRepository,
     IIndicatorService indicatorService,
     ILogger<MarketDataService> logger
 ) : MarketData.MarketDataBase
 {
-    private readonly IChannelManager _channelManager = channelManager;
-    private readonly IMarketDataProvider _marketDataProvider = marketDataProvider;
     private readonly IMarketDataSubscriptionManager _marketDataSubscriptionManager = marketDataSubscriptionManager;
     private readonly ICacheRepository _cacheRepository = cacheRepository;
     private readonly IIndicatorService _indicatorService = indicatorService;
@@ -33,6 +29,8 @@ public class MarketDataService(
 
         foreach (string symbol in request.Symbols)
         {
+            _logger.LogInformation($"Subscribing to {symbol}");
+
             Channel<Bar> subscriptionChannel = await _marketDataSubscriptionManager.SubscribeAsync(symbol, cancellationToken: cancellationToken);
             int windowSize = requestedIndicators.Any()
                 ? _indicatorService.IndicatorWindowValues
@@ -51,63 +49,16 @@ public class MarketDataService(
             }
             finally
             {
+                _logger.LogInformation($"Unsubscribed from {symbol}");
                 await _marketDataSubscriptionManager.UnsubscribeAsync(symbol, cancellationToken);
             }
         }
     }
 
-    public override async Task StreamNewsSnapshot(Empty request, IServerStreamWriter<NewsSnapshot> responseStream, ServerCallContext context)
-    {
-        // TODO: probably read from redis cache as well instead of directly streaming to client
+    // TODO: probably read from redis cache as well instead of directly streaming to client
+    public override async Task StreamNewsSnapshot(Empty request, IServerStreamWriter<NewsSnapshot> responseStream, ServerCallContext context) => throw new NotImplementedException();
 
-        CancellationToken cancellationToken = context.CancellationToken;
-        Channel<MarketNewsSnapshot> responseChannel = Channel.CreateBounded<MarketNewsSnapshot>(100);
-
-        await _channelManager.MarketNewsContextChannel.Writer.WriteAsync(new MarketNewsContext
-        {
-            MarketNewsResponseChannel = responseChannel,
-        }, cancellationToken);
-
-        try
-        {
-            await foreach (MarketNewsSnapshot snapshot in responseChannel.Reader.ReadAllAsync(cancellationToken))
-            {
-                await responseStream.WriteAsync(snapshot.ToGrpc(), cancellationToken);
-            }
-        }
-        catch (OperationCanceledException ex)
-        {
-            _logger.LogInformation(ex.Message); // TODO: better logging
-        }
-        catch (RpcException ex)
-        {
-            _logger.LogInformation(ex.Message); // TODO: better logging
-        }
-    }
-
-    public override async Task GetNewsSnapshot(NewsSnapshotRequest request, IServerStreamWriter<NewsSnapshot> responseStream, ServerCallContext context)
-    {
-        // TODO: refactor this? don't know if it's an anti-pattern to rely on GetNewsdataAsync() since the other streaming methods
-        //       rely on Channel<T> for communication, but we're calling this one straight up.. and we're also just rewriting logic
-        //       for mapping Core models to gRPC models explicitly here. RELOOK!!!
-
-        CancellationToken cancellationToken = context.CancellationToken;
-
-        List<NewsArticle> articles = [.. await _marketDataProvider.GetNewsDataAsync(request.ToCore(), cancellationToken)];
-        foreach (NewsArticle article in articles)
-        {
-            NewsSnapshot snapshot = new NewsSnapshot
-            {
-                Headline = article.Headline,
-                Summary = article.Summary,
-                Source = article.Source,
-                CreatedAt = Timestamp.FromDateTime(article.CreatedAtUtc)
-            };
-            snapshot.Symbols.AddRange(article.Symbols);
-
-            await responseStream.WriteAsync(snapshot, cancellationToken);
-        }
-    }
+    public override async Task GetNewsSnapshot(NewsSnapshotRequest request, IServerStreamWriter<NewsSnapshot> responseStream, ServerCallContext context) => throw new NotImplementedException();
 
     private MarketDataSnapshot BuildMarketDataSnapshot(Bar bar, List<Bar> bars, List<IndicatorType> requestedIndicators)
     {

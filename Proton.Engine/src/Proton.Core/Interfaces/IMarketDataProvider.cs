@@ -1,5 +1,4 @@
 ﻿using Proton.Engine.Core.Models;
-using Proton.Engine.Core.Models.MarketData;
 using Proton.Engine.Core.Models.Trading;
 
 namespace Proton.Engine.Core.Interfaces;
@@ -16,10 +15,8 @@ public interface IMarketDataProvider
 
     // streaming
     IAsyncEnumerable<Bar> StreamBarsAsync(CancellationToken cancellationToken = default);
-    IAsyncEnumerable<NewsArticle> StreamNewsDataAsync(CancellationToken cancellationToken = default);
 
     // fetching
-    Task<IEnumerable<NewsArticle>> GetNewsDataAsync(MarketNewsRequest request, CancellationToken cancellationToken = default);
     Task<IEnumerable<Bar>> GetHistoricalBarsAsync(
         IEnumerable<string> symbols,
         TimeFrame timeFrame,

@@ -1,5 +1,4 @@
-﻿using Proton.Engine.AppHost.Managers;
-using Proton.Engine.AppHost.Services.Grpc;
+﻿using Proton.Engine.AppHost.Services.Grpc;
 using Proton.Engine.Backtesting;
 using Proton.Engine.Brokers.Alpaca;
 using Proton.Engine.Core.Interfaces;
@@ -18,9 +17,6 @@ builder.Services.AddGrpc();
 
 // appsettings/usersecrets configuration
 builder.Services.Configure<AlpacaOptions>(builder.Configuration.GetSection(AlpacaOptions.SectionName));
-
-// managers
-builder.Services.AddSingleton<IChannelManager, ChannelManager>();
 
 // brokers
 builder.Services.AddSingleton<IBroker, AlpacaBroker>();

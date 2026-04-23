@@ -69,11 +69,7 @@ public class MarketDataSubscriptionManager(
 
         lock (_upstreamTaskLock)
         {
-            _upstreamTask ??= Task.Run(async () => await Task.WhenAll(
-                StartMarketDataUpstream(cancellationToken)
-            // TODO: uncomment and implement news..
-            // StartNewsUpstream(cancellationToken)
-            ));
+            _upstreamTask ??= Task.Run(() => StartMarketDataUpstream(cancellationToken));
         }
     }
 
@@ -132,8 +128,6 @@ public class MarketDataSubscriptionManager(
             _activeSubscriptions.Clear();
         }
     }
-
-    private Task StartNewsUpstream(CancellationToken cancellationToken) => throw new NotImplementedException();
 
     public async Task UnsubscribeAsync(string symbol, CancellationToken cancellationToken = default)
     {
