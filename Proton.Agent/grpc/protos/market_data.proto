@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package proton.market_data;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service MarketData {
+  rpc StreamMarketSnapshot (MarketSnapshotRequest) returns (stream MarketSnapshot);
+  rpc StreamNewsSnapshot (google.protobuf.Empty) returns (stream NewsSnapshot);
+  rpc GetNewsSnapshot (NewsSnapshotRequest) returns (stream NewsSnapshot);
+}
+
+message MarketSnapshotRequest {
+  repeated string symbols = 1;
+  repeated string indicators = 2; // TODO: use an enum to enforce available indicators
+}
+
+message MarketSnapshot {
+  string symbol = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string open = 3;
+  string high = 4;
+  string low = 5;
+  string close = 6;
+  string volume = 7;
+
+  map<string, string> indicators = 8;
+}
+
+message NewsSnapshotRequest {
+  repeated string symbols = 1;
+  optional google.protobuf.Timestamp start_interval = 2;
+  optional google.protobuf.Timestamp end_interval = 3;
+  int32 limit = 4;
+}
+
+message NewsSnapshot {
+  string headline = 1;
+  optional string summary = 2;
+  optional string source = 3;
+  repeated string symbols = 4;
+  google.protobuf.Timestamp created_at = 5;
+}

@@ -45,6 +45,8 @@ WebApplication app = builder.Build();
 
 app.MapGrpcService<TradingService>();
 app.MapGrpcService<MarketDataService>();
+// TODO: remove greeter test
+app.MapGrpcService<GreeterService>();
 
 // initial calls
 IEnumerable<IMarketDataProvider> providers = app.Services.GetServices<IMarketDataProvider>();

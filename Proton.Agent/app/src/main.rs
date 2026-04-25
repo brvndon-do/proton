@@ -1,24 +1,12 @@
 use console::style;
 use dialoguer::Input;
+use proton_agent_grpc::grpc_client::connect_and_run;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut name: String = String::from("");
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let response = connect_and_run().await?;
 
-    loop {
-        if !name.trim().is_empty() {
-            break;
-        }
-
-        name = Input::new()
-            .with_prompt("Hello, what's your name?")
-            .interact_text()?;
-    }
-
-    println!(
-        "{}, {}!",
-        style("Hello").yellow().italic(),
-        style(name).on_green().underlined()
-    );
+    println!("Server replied: {}", response.message);
 
     Ok(())
 }
