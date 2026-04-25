@@ -13,7 +13,7 @@ public class GreeterService : Greeter.GreeterBase
 
         return new HelloReply
         {
-            Message = $"Hello, {request}"
+            Message = $"Hello, {name}"
         };
     }
 }

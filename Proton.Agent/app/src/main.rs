@@ -1,5 +1,3 @@
-use console::style;
-use dialoguer::Input;
 use proton_agent_grpc::grpc_client::connect_and_run;
 
 #[tokio::main]
