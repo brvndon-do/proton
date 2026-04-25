@@ -34,8 +34,8 @@ builder.Services.AddSingleton<IBarRepository, ParquetRepository>();
 builder.Services.AddSingleton<ICacheRepository, RedisRepository>();
 
 // market data providers
-builder.Services.AddSingleton<IMarketDataProvider, AlpacaMarketDataProvider>();
-// builder.Services.AddSingleton<IMarketDataProvider, MockMarketDataProvider>();
+// builder.Services.AddSingleton<IMarketDataProvider, AlpacaMarketDataProvider>();
+builder.Services.AddSingleton<IMarketDataProvider, MockMarketDataProvider>();
 
 // modules
 builder.Services.AddHostedService<BacktestingService>();

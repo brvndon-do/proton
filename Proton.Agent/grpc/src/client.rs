@@ -1,19 +1,38 @@
-pub mod hello_world {
-    tonic::include_proto!("proton.greeter_test");
+pub mod proton_market_data {
+    tonic::include_proto!("proton.market_data");
 }
 
-use hello_world::HelloReply;
-use hello_world::HelloRequest;
-use hello_world::greeter_client::GreeterClient;
+use proton_market_data::market_data_client::MarketDataClient;
+use proton_market_data::{MarketSnapshot, MarketSnapshotRequest};
+use tonic::transport::Channel;
 
-pub async fn connect_and_run() -> Result<HelloReply, Box<dyn std::error::Error>> {
-    let mut client = GreeterClient::connect("http://localhost:5182").await?;
+pub struct ProtonGrpcClient {
+    client: MarketDataClient<Channel>,
+}
 
-    let request = tonic::Request::new(HelloRequest {
-        name: "Brandon".into(),
-    });
+impl ProtonGrpcClient {
+    pub async fn connect(uri: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        let client = MarketDataClient::connect(uri.to_string()).await?;
 
-    let response = client.say_hello(request).await?;
+        Ok(Self { client })
+    }
 
-    Ok(response.into_inner())
+    pub async fn stream_market_data(
+        &mut self,
+        symbols: Vec<String>,
+        requested_indicators: Vec<String>,
+    ) -> Result<tonic::Streaming<MarketSnapshot>, Box<dyn std::error::Error>> {
+        let request = tonic::Request::new(MarketSnapshotRequest {
+            symbols,
+            indicators: requested_indicators,
+        });
+
+        let stream = self
+            .client
+            .stream_market_snapshot(request)
+            .await?
+            .into_inner();
+
+        Ok(stream)
+    }
 }
