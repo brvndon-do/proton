@@ -22,16 +22,9 @@ public class MarketDataIngestion(
         // TODO: read from different source instead of hard code
         string[] symbols = ["AAPL", "TSLA", "NVDA", "META"];
 
-        // NOTE: drain unused channels
         foreach (string symbol in symbols)
         {
-            Channel<Bar> channel = await _marketDataSubscriptionManager.SubscribeAsync(symbol, cancellationToken: cancellationToken);
-
-            // TODO: maybe better way to do this?
-            _ = Task.Run(async () =>
-            {
-                await foreach (Bar _ in channel.Reader.ReadAllAsync(cancellationToken)) { }
-            }, cancellationToken);
+            await _marketDataSubscriptionManager.PinAsync(symbol, cancellationToken);
         }
     }
 }
