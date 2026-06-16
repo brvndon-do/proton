@@ -13,17 +13,37 @@ public class MarketDataSubscriptionManager(
     ICacheRepository cacheRepository,
     IBarRepository barRepository,
     ILogger<MarketDataSubscriptionManager> logger
-) : IMarketDataSubscriptionManager
+) : IMarketDataSubscriptionManager, IAsyncDisposable
 {
     private readonly IMarketDataProvider _marketDataProvider = marketDataProvider;
     private readonly ICacheRepository _cacheRepository = cacheRepository;
     private readonly IBarRepository _barRepository = barRepository;
     private readonly ILogger<MarketDataSubscriptionManager> _logger = logger;
 
+    private readonly CancellationTokenSource _cts = new CancellationTokenSource();
     private readonly ConcurrentDictionary<string, SymbolSubscription> _activeSubscriptions = [];
 
     private readonly Lock _upstreamTaskLock = new();
     private Task? _upstreamTask;
+
+    public async Task PinAsync(string symbol, CancellationToken cancellationToken = default)
+    {
+        SymbolSubscription subscription = await GetOrCreateSubscriptionAsync(symbol, cancellationToken);
+        Interlocked.Increment(ref subscription.PinCount);
+    }
+
+    public async Task UnpinAsync(string symbol, CancellationToken cancellationToken = default)
+    {
+        if (!_activeSubscriptions.TryGetValue(symbol, out SymbolSubscription? subscription) || subscription is null)
+        {
+            _logger.LogInformation("{symbol} has already been unpinned", symbol);
+            return;
+        }
+
+        _ = Interlocked.Decrement(ref subscription.PinCount);
+
+        await ReleaseSubscriptionAsync(subscription, cancellationToken);
+    }
 
     // TODO: this returns only a channel for market data subscription, even though it is supposed to consume news related to the symbol as well.
     //       maybe i'm thinking of returning a tuple of channels, one for market data and one for news. but in the future, will other providers
@@ -35,42 +55,96 @@ public class MarketDataSubscriptionManager(
             FullMode = BoundedChannelFullMode.DropOldest,
         });
 
-        bool isNewSubscription = false;
-        // NOTE: potential race-condition, LOOK INTO! use Lazy<T>?
-        SymbolSubscription subscription = _activeSubscriptions.GetOrAdd(symbol, _ =>
-        {
-            isNewSubscription = true;
-
-            return new SymbolSubscription
-            {
-                Symbol = symbol,
-                SubscriberChannels = [],
-                StartedAtUtc = DateTime.UtcNow,
-            };
-        });
+        SymbolSubscription subscription = await GetOrCreateSubscriptionAsync(symbol, cancellationToken);
 
         subscription.SubscriberChannels.Add(subscriberChannel);
         Interlocked.Increment(ref subscription.ActiveSubscribersCount);
 
-        if (isNewSubscription)
-        {
-            await BackfillIfNeededAsync(subscription);
-            await _marketDataProvider.SubscribeToSymbolAsync(symbol, cancellationToken);
-        }
-
-        EnsureUpstreamTaskRunning(cancellationToken);
-
         return subscriberChannel;
     }
 
-    private void EnsureUpstreamTaskRunning(CancellationToken cancellationToken)
+    public async Task UnsubscribeAsync(string symbol, CancellationToken cancellationToken = default)
+    {
+        if (!_activeSubscriptions.TryGetValue(symbol, out SymbolSubscription? subscription) || subscription is null)
+        {
+            _logger.LogInformation("{symbol} has already been unsubscribed", symbol);
+            return;
+        }
+
+        _ = Interlocked.Decrement(ref subscription.ActiveSubscribersCount);
+
+        await ReleaseSubscriptionAsync(subscription, cancellationToken);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _cts.CancelAsync();
+
+        if (_upstreamTask is not null)
+            await _upstreamTask;
+
+        _cts.Dispose();
+    }
+
+    private async Task<SymbolSubscription> GetOrCreateSubscriptionAsync(string symbol, CancellationToken cancellationToken)
+    {
+        SymbolSubscription subscription = _activeSubscriptions.GetOrAdd(symbol, key =>
+        {
+            SymbolSubscription created = new()
+            {
+                Symbol = key,
+                SubscriberChannels = [],
+                StartedAtUtc = DateTime.UtcNow,
+            };
+
+            // Lazy<T> will ensure BackfillIfNeededAsync and SubscribeToSymbolAsync runs once per subscriber; prevents data races
+            created.Initialization = new Lazy<Task>(async () =>
+            {
+                try
+                {
+                    await BackfillIfNeededAsync(created, _cts.Token);
+                    await _marketDataProvider.SubscribeToSymbolAsync(created.Symbol, _cts.Token);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to backfill/subscribe to symbol to {Symbol}", symbol);
+                    _ = _activeSubscriptions.TryRemove(symbol, out _);
+                    throw;
+                }
+            });
+
+            return created;
+        });
+
+        await subscription.Initialization.Value.WaitAsync(cancellationToken);
+
+        EnsureUpstreamTaskRunning();
+
+        return subscription;
+    }
+
+    // NOTE: another potential race condition -- if two threads that unsubscribes/unpins, they can both enter the teardown method
+    //       the solution is idempotency or locking the symbol, but this is low pri right now. 
+    private async Task ReleaseSubscriptionAsync(SymbolSubscription subscription, CancellationToken cancellationToken)
+    {
+        if (subscription.ActiveSubscribersCount <= 0 && subscription.PinCount <= 0)
+        {
+            _ = _activeSubscriptions.TryRemove(subscription.Symbol, out _);
+            await _marketDataProvider.UnsubscribeToSymbolAsync(subscription.Symbol, cancellationToken);
+        }
+
+        if (_activeSubscriptions.IsEmpty)
+            await _marketDataProvider.DisconnectAsync(cancellationToken);
+    }
+
+    private void EnsureUpstreamTaskRunning()
     {
         if (_upstreamTask is not null)
             return;
 
         lock (_upstreamTaskLock)
         {
-            _upstreamTask ??= Task.Run(() => StartMarketDataUpstream(cancellationToken));
+            _upstreamTask ??= Task.Run(() => StartMarketDataUpstream(_cts.Token));
         }
     }
 
@@ -130,26 +204,7 @@ public class MarketDataSubscriptionManager(
         }
     }
 
-    public async Task UnsubscribeAsync(string symbol, CancellationToken cancellationToken = default)
-    {
-        if (!_activeSubscriptions.TryGetValue(symbol, out SymbolSubscription? subscription) || subscription is null)
-        {
-            _logger.LogInformation("{symbol} has already been unsubscribed", symbol);
-            return;
-        }
-
-        int remaining = Interlocked.Decrement(ref subscription!.ActiveSubscribersCount);
-        if (remaining <= 0)
-        {
-            _activeSubscriptions.TryRemove(symbol, out _);
-            await _marketDataProvider.DisconnectAsync(cancellationToken);
-        }
-
-        if (_activeSubscriptions.IsEmpty)
-            await _marketDataProvider.UnsubscribeToSymbolAsync(symbol, cancellationToken);
-    }
-
-    private async Task BackfillIfNeededAsync(SymbolSubscription subscription)
+    private async Task BackfillIfNeededAsync(SymbolSubscription subscription, CancellationToken cancellationToken = default)
     {
         // TODO
         _logger.LogInformation($"[SIMULATION]: backfilling for symbol {subscription.Symbol}");

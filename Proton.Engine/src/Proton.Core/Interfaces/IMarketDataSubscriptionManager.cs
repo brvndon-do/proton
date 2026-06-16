@@ -7,6 +7,9 @@ public interface IMarketDataSubscriptionManager
 {
     // TODO: these are marked as "async" but its implementation actually doesn't contain any await calls. for now, let's leave it. in the future, change the API
     //       to match its "operation"
+    Task PinAsync(string symbol, CancellationToken cancellationToken = default);
+    Task UnpinAsync(string symbol, CancellationToken cancellationToken = default);
+
     Task<Channel<Bar>> SubscribeAsync(string symbol, int subscriberCapacity = 1_000, CancellationToken cancellationToken = default);
     Task UnsubscribeAsync(string symbol, CancellationToken cancellationToken = default);
 }
