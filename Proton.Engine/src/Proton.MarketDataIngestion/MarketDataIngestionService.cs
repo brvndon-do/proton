@@ -1,9 +1,6 @@
-﻿using System.Threading.Channels;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Proton.Engine.Core.Interfaces;
-using Proton.Engine.Core.Models;
-using Proton.Engine.Core.Models.MarketData;
 
 namespace Proton.Engine.MarketDataIngestion;
 

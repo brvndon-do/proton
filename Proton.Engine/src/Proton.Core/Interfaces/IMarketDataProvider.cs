@@ -18,6 +18,15 @@ public interface IMarketDataProvider
 
     // fetching
     Task<IEnumerable<Bar>> GetHistoricalBarsAsync(
+        string symbol,
+        TimeFrame timeFrame,
+        DateTime? from,
+        DateTime? to,
+        int limit = 1_000,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<IEnumerable<Bar>> GetHistoricalBarsAsync(
         IEnumerable<string> symbols,
         TimeFrame timeFrame,
         DateTime? from,

@@ -133,4 +133,7 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
             .Take(limit)
             .Select(x => x.ToCore());
     }
+
+    public Task<IEnumerable<Bar>> GetHistoricalBarsAsync(string symbol, ProtonTrading.TimeFrame timeFrame, DateTime? from, DateTime? to, int limit = 1000, CancellationToken cancellationToken = default) =>
+        GetHistoricalBarsAsync([symbol], timeFrame, from, to, limit, cancellationToken);
 }

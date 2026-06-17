@@ -1,9 +1,12 @@
 ﻿using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Proton.Engine.Core.Interfaces;
 using Proton.Engine.Core.Interfaces.Repositories;
 using Proton.Engine.Core.Models;
+using Proton.Engine.Core.Models.Trading;
+using Proton.Engine.Core.Utilities;
 using Proton.Engine.MarketDataIngestion.Models;
 
 namespace Proton.Engine.MarketDataIngestion;
@@ -12,6 +15,7 @@ public class MarketDataSubscriptionManager(
     IMarketDataProvider marketDataProvider,
     ICacheRepository cacheRepository,
     IBarRepository barRepository,
+    IOptions<MarketDataIngestionOptions> options,
     ILogger<MarketDataSubscriptionManager> logger
 ) : IMarketDataSubscriptionManager, IAsyncDisposable
 {
@@ -20,6 +24,7 @@ public class MarketDataSubscriptionManager(
     private readonly IBarRepository _barRepository = barRepository;
     private readonly ILogger<MarketDataSubscriptionManager> _logger = logger;
 
+    private readonly MarketDataIngestionOptions _options = options.Value;
     private readonly CancellationTokenSource _cts = new CancellationTokenSource();
     private readonly ConcurrentDictionary<string, SymbolSubscription> _activeSubscriptions = [];
 
@@ -206,7 +211,24 @@ public class MarketDataSubscriptionManager(
 
     private async Task BackfillIfNeededAsync(SymbolSubscription subscription, CancellationToken cancellationToken = default)
     {
-        // TODO
-        _logger.LogInformation($"[SIMULATION]: backfilling for symbol {subscription.Symbol}");
+        string symbol = subscription.Symbol;
+        // TODO: maybe add overload for x limit of bars from a file read..
+        List<Bar> bars = [.. await _barRepository.ReadBarsAsync(symbol, cancellationToken)];
+
+        if (!bars.Any())
+        {
+            List<Bar> historicalBars = [.. await _marketDataProvider.GetHistoricalBarsAsync(
+                symbol,
+                timeFrame: _options.BackfillTimeFrame?.ConvertToTimeFrame() ?? TimeFrame.Daily,
+                from: DateTime.UtcNow.AddDays(-(_options.BackfillLookbackDays ?? 30)),  // RANGE:
+                to: DateTime.UtcNow,                                                    // 30 DAYS
+                cancellationToken: cancellationToken
+            )];
+
+            bars.AddRange(historicalBars);
+            await _barRepository.AddRangeAsync(historicalBars, cancellationToken);
+        }
+
+        await _cacheRepository.AddRangeAsync(bars, cancellationToken);
     }
 }

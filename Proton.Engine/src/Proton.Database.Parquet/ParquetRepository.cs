@@ -50,12 +50,12 @@ public class ParquetRepository : IBarRepository
         File.Delete(Path.Combine(PARQUET_FILE_DIR, $"{key}.parquet"));
     }
 
-    public async Task<IEnumerable<Bar>> ReadBarsAsync(string symbol)
+    public async Task<IEnumerable<Bar>> ReadBarsAsync(string symbol, CancellationToken cancellationToken = default)
     {
         (FileStream fs, _) = GetFileStream(symbol);
 
         using (fs)
-            return await ParquetSerializer.DeserializeAsync<Bar>(fs);
+            return await ParquetSerializer.DeserializeAsync<Bar>(fs, cancellationToken: cancellationToken);
     }
 
     private (FileStream fileStream, bool fileExists) GetFileStream(string filename)

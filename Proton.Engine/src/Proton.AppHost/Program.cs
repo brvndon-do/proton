@@ -17,6 +17,8 @@ builder.Services.AddGrpc();
 
 // appsettings/usersecrets configuration
 builder.Services.Configure<AlpacaOptions>(builder.Configuration.GetSection(AlpacaOptions.SectionName));
+builder.Services.Configure<RedisOptions>(builder.Configuration.GetSection(RedisOptions.SectionName));
+builder.Services.Configure<MarketDataIngestionOptions>(builder.Configuration.GetSection(MarketDataIngestionOptions.SectionName));
 
 // brokers
 builder.Services.AddSingleton<IBroker, AlpacaBroker>();

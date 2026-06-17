@@ -109,4 +109,7 @@ public class MockMarketDataProvider : IMarketDataProvider
     private static decimal RandomDecimal(decimal min, decimal max) => min + (decimal)_random.NextDouble() * (max - min);
 
     private static long RandomLong(long min, long max) => min + (long)(_random.NextDouble() * (max - min));
+
+    public Task<IEnumerable<Bar>> GetHistoricalBarsAsync(string symbol, TimeFrame timeFrame, DateTime? from, DateTime? to, int limit = 1000, CancellationToken cancellationToken = default) =>
+        GetHistoricalBarsAsync([symbol], timeFrame, from, to, limit, cancellationToken);
 }
