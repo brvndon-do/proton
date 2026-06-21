@@ -82,76 +82,67 @@ PostgreSQL serves as the unified storage layer for:
 
 ```mermaid
 graph TD
-    subgraph AgenticLayer ["Agentic Layer (Python/LLM)"]
-        A[Researcher Agent] -->|Context| B[Strategist Agent]
-        B -->|JSON Draft| C[Critic Agent]
-        C -- Rejects --> B
-        C -- Approves --> D[gRPC Client]
-        
-        AgenticAPI["Agent Management API"]
-    end
-
-    subgraph TradingEngine ["Proton Engine (C# Core)"]
-        G_Srv["gRPC Server Interface"]
-        
-        subgraph Ingestion ["Market Ingestion Module"]
-            M_Socket[Broker WebSockets] --> Live_Feed[Real-time Stream]
-            Live_Feed --> Cache[(Redis)]
-            Live_Feed --> P_Storage[(Parquet Files)]
+    subgraph Client ["Client Layer"]
+        subgraph Agents ["Agents"]
+            AgentR["Research Agent"]
+            AgentS["Strategy Agent"]
+            AgentV["Validator Agent"]
         end
+        MDI["Market Data Ingestor"]
+        GML["gRPC Message Listener"]
+    end
 
-        subgraph Validation ["Strategy Validation"]
-            BT[Backtesting Module]
-            WF[Walk-Forward Validator]
-            BT <--> P_Storage
+    subgraph Engine ["Proton Engine (C#)"]
+        MDIng["Market Data Ingestion"]
+        GMS["gRPC Message Service"]
+        BT["Backtesting"]
+        TE["Trade Execution"]
+        AM["Account Monitoring"]
+        REP["Reporting"]
+
+        subgraph Persistence ["Persistence"]
+            PG[("PostgreSQL")]
+            RC[("Redis Cache")]
+            PQ[("Parquet Files")]
         end
-
-        subgraph Execution ["Execution & Monitoring"]
-            Watcher[Strategy Watcher / Signal Generator]
-            Risk[Risk Circuit Breaker]
-            OrderMgr[Order Manager / Provider Pattern]
-        end
-
-        Reporting[Reporting Module]
     end
 
-    subgraph Storage ["Persistent State"]
-        DB[(PostgreSQL)]
-    end
+    Alpaca["Alpaca (Provider / Broker)"]
 
-    subgraph Dashboard ["Admin & Control"]
-        Admin[Admin Dashboard]
-        DashAPI[Dashboard Backend]
-    end
+    %% Alpaca feeds engine
+    Alpaca --> MDIng
 
-    subgraph Brokerages
-        Alpaca[Alpaca / IBKR]
-    end
+    %% Market data: engine writes to persistence
+    MDIng -->|"Writes bars"| RC
+    MDIng -->|"Writes bars"| PQ
 
-    %% Flow: Market Data to Agents
-    Live_Feed -.->|Aggregated Bars| G_Srv
-    G_Srv -.->|Streamed Context| A
+    %% Client subscribes to engine market data stream
+    MDI -->|"gRPC stream"| MDIng
 
-    %% Flow: Strategy Proposal
-    D -->|Submit Strategy| G_Srv
-    G_Srv --> BT
-    BT -- "Pass" --> Watcher
-    BT -- "Fail" --> Reporting
+    %% Market data fans out into agent pipeline
+    MDI -->|"Send message"| AgentR
+    AgentR -->|"Send message"| AgentS
+    AgentS -->|"Send message"| AgentV
 
-    %% Flow: The Trading Process (The 'Black Box')
-    Watcher -->|Trigger Signal| Risk
-    Risk -->|Approved| OrderMgr
-    OrderMgr <--> Alpaca
+    %% Engine message bus → client (reporting, feedback, etc.)
+    GMS -.->|"gRPC stream"| GML
+    GML -.->|"Route message"| AgentR
+    GML -.->|"Route message"| AgentS
+    GML -.->|"Route message"| AgentV
 
-    %% State Management & Feedback
-    OrderMgr -->|Trade Events| DB
-    Reporting -->|Post-Mortem| DB
-    DB -.->|Historical Context| A
-    
-    %% Admin Control
-    DashAPI --> DB
-    DashAPI -- "Kill Switch" --> G_Srv
-    Admin -- "Update Instructions" --> AgenticAPI
-    DashAPI -- "System Status" --> Admin
+    %% Validator submits serialized strategy contract to engine
+    AgentV -->|"gRPC invocation"| BT
+
+    %% Backtesting reads history, gates execution
+    BT -->|"Read historical bars"| PQ
+    BT -->|"Pass"| TE
+    BT -->|"Fail"| REP
+
+    %% Trade execution
+    TE -->|"Records trade history"| PG
+    TE --> REP
+
+    %% Account monitoring
+    AM -->|"Records account snapshot"| PG
 ```
 
