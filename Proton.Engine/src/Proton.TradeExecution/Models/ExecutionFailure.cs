@@ -1,4 +1,4 @@
-namespace Proton.Engine.Core.Models.Execution;
+﻿namespace Proton.Engine.TradeExecution.Models;
 
 public sealed class ExecutionFailure
 {

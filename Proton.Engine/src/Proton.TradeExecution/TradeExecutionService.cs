@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Proton.Engine.Core.Interfaces;
-using Proton.Engine.Core.Models.Execution;
 using Proton.Engine.Core.Models.Trading;
+using Proton.Engine.TradeExecution.Models;
 
 namespace Proton.Engine.TradeExecution;
 
