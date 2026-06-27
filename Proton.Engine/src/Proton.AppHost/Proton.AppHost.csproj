@@ -30,6 +30,7 @@
     <ProjectReference Include="..\Proton.Indicators\Proton.Indicators.csproj" />
     <ProjectReference Include="..\Proton.Database.Parquet\Proton.Database.Parquet.csproj" />
     <ProjectReference Include="..\Proton.Database.Redis\Proton.Database.Redis.csproj" />
+    <ProjectReference Include="..\Proton.TradeExecution\Proton.TradeExecution.csproj" />
   </ItemGroup>
 
 </Project>

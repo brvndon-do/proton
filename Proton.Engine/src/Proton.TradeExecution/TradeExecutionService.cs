@@ -1,28 +1,28 @@
-﻿using Proton.Engine.Core.Models.Trading;
-using Proton.Engine.Core.Models.Execution;
+﻿using Microsoft.Extensions.Logging;
 using Proton.Engine.Core.Interfaces;
+using Proton.Engine.Core.Models.Execution;
+using Proton.Engine.Core.Models.Trading;
 
-namespace Proton.Engine.Core.Services;
+namespace Proton.Engine.TradeExecution;
 
-public sealed class TradeExecutionService(IOrderGateway orderGateway)
+public class TradeExecutionService(IOrderGateway orderGateway, ILogger<TradeExecutionService> logger) : ITradeExecutionService
 {
     private readonly IOrderGateway _orderGateway = orderGateway;
+    private readonly ILogger<TradeExecutionService> _logger = logger;
 
     public Task<OrderResult> SubmitOrderAsync(TradeOrder order, CancellationToken cancellationToken = default) => _orderGateway.CreateOrderAsync(order, cancellationToken);
 
-    public async Task<ExecutionBatchResult> SubmitOrdersAsync(IEnumerable<TradeOrder> orders, ExecutionOptions? options = null, CancellationToken cancellationToken = default)
+    public async Task<ExecutionBatchResult> SubmitOrdersAsync(IReadOnlyList<TradeOrder> orders, ExecutionOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= new ExecutionOptions();
-        List<TradeOrder> orderList = [.. orders];
-
         SemaphoreSlim semaphore = new SemaphoreSlim(options.MaxDegreeOfParallelism);
         List<Task> tasks = [];
-        OrderResult?[] results = new OrderResult?[orderList.Count];
         List<ExecutionFailure> failures = [];
+        OrderResult?[] results = new OrderResult?[orders.Count];
 
-        for (int index = 0; index < orderList.Count; index++)
+        for (int i = 0; i < orders.Count; i++)
         {
-            TradeOrder order = orderList[index];
+            TradeOrder order = orders[i];
             await semaphore.WaitAsync(cancellationToken);
 
             Task task = Task.Run(async () =>
@@ -30,18 +30,20 @@ public sealed class TradeExecutionService(IOrderGateway orderGateway)
                 try
                 {
                     OrderResult result = await _orderGateway.CreateOrderAsync(order, cancellationToken);
-                    results[index] = result;
+                    results[i] = result;
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Failed to submit order");
+
                     lock (failures)
                     {
                         failures.Add(new ExecutionFailure
                         {
-                            Index = index,
+                            Index = i,
                             Symbol = order.Symbol,
                             ClientOrderId = order.ClientOrderId,
-                            Error = ex.Message
+                            Error = ex.Message,
                         });
                     }
 
@@ -52,7 +54,7 @@ public sealed class TradeExecutionService(IOrderGateway orderGateway)
                 {
                     semaphore.Release();
                 }
-            }, cancellationToken);
+            });
 
             tasks.Add(task);
         }
@@ -63,10 +65,5 @@ public sealed class TradeExecutionService(IOrderGateway orderGateway)
         return new ExecutionBatchResult(completed, failures);
     }
 
-    public async Task<bool> CancelOrderAsync(string orderId, CancellationToken cancellationToken = default)
-    {
-        bool success = await _orderGateway.CancelOrderAsync(orderId, cancellationToken);
-
-        return success;
-    }
+    public Task<bool> CancelOrderAsync(string orderId, CancellationToken cancellationToken = default) => _orderGateway.CancelOrderAsync(orderId, cancellationToken);
 }

@@ -8,6 +8,7 @@
     <Project Path="src/Proton.Database.Redis/Proton.Database.Redis.csproj" />
     <Project Path="src/Proton.Indicators/Proton.Indicators.csproj" />
     <Project Path="src/Proton.MarketDataIngestion/Proton.MarketDataIngestion.csproj" />
+    <Project Path="src/Proton.TradeExecution/Proton.TradeExecution.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Proton.Backtesting.Tests/Proton.Backtesting.Tests.csproj" />

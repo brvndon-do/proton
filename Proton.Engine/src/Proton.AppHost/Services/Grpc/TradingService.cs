@@ -1,16 +1,15 @@
 ﻿using Grpc.Core;
 using Proton.Engine.AppHost.Grpc;
 using Proton.Engine.AppHost.Utilities;
-using Proton.Engine.Core.Services;
-
+using Proton.Engine.TradeExecution;
 using ProtonTradingModels = Proton.Engine.Core.Models.Trading;
 
 namespace Proton.Engine.AppHost.Services.Grpc;
 
 // TODO: incorporate proper logging
-public class TradingService(TradeExecutionService tradeExecutionService, ILogger<TradingService> logger) : Trading.TradingBase
+public class TradingService(ITradeExecutionService tradeExecutionService, ILogger<TradingService> logger) : Trading.TradingBase
 {
-    private readonly TradeExecutionService _tradeExecutionService = tradeExecutionService;
+    private readonly ITradeExecutionService _tradeExecutionService = tradeExecutionService;
     private readonly ILogger<TradingService> _logger = logger;
 
     public override async Task<CreateOrderResponse> CreateOrder(CreateOrderRequest request, ServerCallContext context)

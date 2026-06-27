@@ -3,12 +3,11 @@ using Proton.Engine.Backtesting;
 using Proton.Engine.Brokers.Alpaca;
 using Proton.Engine.Core.Interfaces;
 using Proton.Engine.Core.Interfaces.Repositories;
-using Proton.Engine.Core.Services;
-using Proton.Engine.Core.Services.Mock;
 using Proton.Engine.Database.Parquet;
 using Proton.Engine.Database.Redis;
 using Proton.Engine.Indicators;
 using Proton.Engine.MarketDataIngestion;
+using Proton.Engine.TradeExecution;
 using StackExchange.Redis;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -27,7 +26,7 @@ builder.Services.AddSingleton<IAccountProvider, AlpacaBroker>();
 builder.Services.AddSingleton<IMarketClock, AlpacaBroker>();
 
 // core services
-builder.Services.AddSingleton<TradeExecutionService>();
+builder.Services.AddSingleton<ITradeExecutionService, TradeExecutionService>();
 builder.Services.AddSingleton<IIndicatorService, IndicatorService>();
 builder.Services.AddSingleton<IMarketDataSubscriptionManager, MarketDataSubscriptionManager>();
 
