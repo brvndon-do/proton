@@ -2,7 +2,7 @@
 
 namespace Proton.Engine.Core.Models.MarketData;
 
-public class MarketNewsContext
+public sealed class MarketNewsContext
 {
     public required Channel<MarketNewsSnapshot> MarketNewsResponseChannel { get; init; }
 }

@@ -1,11 +1,11 @@
 ﻿namespace Proton.Engine.Core.Models.Trading;
 
-public class OrderStatus
+public sealed class OrderStatus
 {
-    public required string OrderId { get; set; }
-    public OrderState State { get; set; }
-    public decimal FilledQuantity { get; set; }
-    public decimal RemainingQuantity { get; set; }
-    public DateTime UpdatedAtUtc { get; set; }
-    public string? Reason { get; set; }
+    public required string OrderId { get; init; }
+    public OrderState State { get; init; }
+    public decimal FilledQuantity { get; init; }
+    public decimal RemainingQuantity { get; init; }
+    public DateTime UpdatedAtUtc { get; init; }
+    public string? Reason { get; init; }
 }

@@ -1,14 +1,14 @@
 ﻿namespace Proton.Engine.Core.Models.MarketData;
 
-public class MarketDataSnapshot
+public sealed class MarketDataSnapshot
 {
-    public required string Symbol { get; set; }
-    public DateTime TimestampUtc { get; set; }
-    public decimal Open { get; set; }
-    public decimal High { get; set; }
-    public decimal Low { get; set; }
-    public decimal Close { get; set; }
-    public decimal Volume { get; set; }
+    public required string Symbol { get; init; }
+    public DateTime TimestampUtc { get; init; }
+    public decimal Open { get; init; }
+    public decimal High { get; init; }
+    public decimal Low { get; init; }
+    public decimal Close { get; init; }
+    public decimal Volume { get; init; }
 
-    public IDictionary<IndicatorType, decimal>? Indicators { get; set; }
+    public IDictionary<IndicatorType, decimal>? Indicators { get; init; }
 }

@@ -1,13 +1,13 @@
 ﻿namespace Proton.Engine.Core.Models.Trading;
 
-public class Trade
+public sealed class Trade
 {
-    public required string TradeId { get; set; }
-    public string? OrderId { get; set; }
-    public required string Symbol { get; set; }
-    public OrderSide Side { get; set; }
-    public decimal Quantity { get; set; }
-    public decimal Price { get; set; }
-    public DateTime ExecutedAtUtc { get; set; }
-    public decimal? Fees { get; set; }
+    public required string TradeId { get; init; }
+    public string? OrderId { get; init; }
+    public required string Symbol { get; init; }
+    public OrderSide Side { get; init; }
+    public decimal Quantity { get; init; }
+    public decimal Price { get; init; }
+    public DateTime ExecutedAtUtc { get; init; }
+    public decimal? Fees { get; init; }
 }

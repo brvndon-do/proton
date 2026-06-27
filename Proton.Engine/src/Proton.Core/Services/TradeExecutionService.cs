@@ -4,7 +4,7 @@ using Proton.Engine.Core.Interfaces;
 
 namespace Proton.Engine.Core.Services;
 
-public class TradeExecutionService(IOrderGateway orderGateway)
+public sealed class TradeExecutionService(IOrderGateway orderGateway)
 {
     private readonly IOrderGateway _orderGateway = orderGateway;
 

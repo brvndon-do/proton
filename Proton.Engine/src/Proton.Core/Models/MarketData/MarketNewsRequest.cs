@@ -1,11 +1,11 @@
 ﻿namespace Proton.Engine.Core.Models.MarketData;
 
-public class MarketNewsRequest
+public sealed class MarketNewsRequest
 {
-    public required IEnumerable<string> Symbols { get; set; }
+    public required IEnumerable<string> Symbols { get; init; }
 
     // TODO: rename to just "start" and "end"
-    public DateTime? StartInterval { get; set; }
-    public DateTime? EndInterval { get; set; }
-    public int Limit { get; set; } = 10;
+    public DateTime? StartInterval { get; init; }
+    public DateTime? EndInterval { get; init; }
+    public int Limit { get; init; } = 10;
 }

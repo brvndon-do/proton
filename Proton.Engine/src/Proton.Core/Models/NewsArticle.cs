@@ -1,13 +1,13 @@
 ﻿namespace Proton.Engine.Core.Models;
 
-public class NewsArticle
+public sealed class NewsArticle
 {
-    public required string Id { get; set; }
-    public required string Headline { get; set; }
-    public string? Summary { get; set; }
-    public string? Content { get; set; }
-    public string? Author { get; set; }
-    public string? Source { get; set; }
-    public IEnumerable<string>? Symbols { get; set; }
-    public DateTime CreatedAtUtc { get; set; }
+    public required string Id { get; init; }
+    public required string Headline { get; init; }
+    public string? Summary { get; init; }
+    public string? Content { get; init; }
+    public string? Author { get; init; }
+    public string? Source { get; init; }
+    public IEnumerable<string>? Symbols { get; init; }
+    public DateTime CreatedAtUtc { get; init; }
 }

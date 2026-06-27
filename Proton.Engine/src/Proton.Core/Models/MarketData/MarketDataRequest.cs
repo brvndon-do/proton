@@ -1,7 +1,7 @@
 ﻿namespace Proton.Engine.Core.Models.MarketData;
 
-public class MarketDataRequest
+public sealed class MarketDataRequest
 {
-    public required IEnumerable<string> Symbols { get; set; }
-    public IEnumerable<IndicatorType>? Indicators { get; set; }
+    public required IEnumerable<string> Symbols { get; init; }
+    public IEnumerable<IndicatorType>? Indicators { get; init; }
 }

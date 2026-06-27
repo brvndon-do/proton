@@ -1,10 +1,10 @@
 ﻿namespace Proton.Engine.Core.Models.MarketData;
 
-public class MarketNewsSnapshot
+public sealed class MarketNewsSnapshot
 {
-    public required string Headline { get; set; }
-    public string? Summary { get; set; }
-    public string? Source { get; set; }
-    public IEnumerable<string>? Symbols { get; set; }
-    public DateTime CreatedAtUtc { get; set; }
+    public required string Headline { get; init; }
+    public string? Summary { get; init; }
+    public string? Source { get; init; }
+    public IEnumerable<string>? Symbols { get; init; }
+    public DateTime CreatedAtUtc { get; init; }
 }

@@ -7,16 +7,16 @@ public enum AccountType
     Paper
 }
 
-public class Account
+public sealed class Account
 {
-    public required string AccountId { get; set; }
-    public string? AccountNumber { get; set; }
-    public AccountType Type { get; set; }
-    public decimal Currency { get; set; }
-    public decimal Cash { get; set; }
-    public decimal BuyingPower { get; set; }
-    public decimal Equity { get; set; }
-    public decimal PortfolioValue { get; set; }
-    public double MarginMultiplier { get; set; }
-    public bool IsTradingEnabled { get; set; }
+    public required string AccountId { get; init; }
+    public string? AccountNumber { get; init; }
+    public AccountType Type { get; init; }
+    public decimal Currency { get; init; }
+    public decimal Cash { get; init; }
+    public decimal BuyingPower { get; init; }
+    public decimal Equity { get; init; }
+    public decimal PortfolioValue { get; init; }
+    public double MarginMultiplier { get; init; }
+    public bool IsTradingEnabled { get; init; }
 }
