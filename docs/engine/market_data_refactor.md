@@ -1,3 +1,7 @@
+# OUTDATED: This document is outdated.
+
+## This document is being kept in the mean time for historic purposes. Once this is completely obsolete, this will be removed.
+
 # Plan: Refactor Market Data Ingestion to Subscription Model
 
 ## TL;DR

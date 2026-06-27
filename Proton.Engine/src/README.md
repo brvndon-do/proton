@@ -13,3 +13,5 @@
 ## Brokers
 
 - `Proton.Brokers.Alpaca`: Alpaca Markets platform implementation
+
+For more information regarding these services, refer to [here](../../docs/project_overview.md#protonengine).

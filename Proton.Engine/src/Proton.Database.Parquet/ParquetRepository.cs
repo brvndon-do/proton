@@ -4,6 +4,9 @@ using Proton.Engine.Core.Models;
 
 namespace Proton.Engine.Database.Parquet;
 
+// TODO: this will probably need to be thread safe if multiple requests from MarketDataSubscriptionManager
+//       or BacktestingService will need to read/write from the same file(s).
+
 public class ParquetRepository : IBarRepository
 {
     private static readonly string PARQUET_FILE_DIR = Path.Combine(AppContext.BaseDirectory, "output");

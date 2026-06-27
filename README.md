@@ -2,6 +2,8 @@
 
 An AI-powered algorithmic trading system — a multi-agent AI cluster generates and iterates on trading strategies, while a deterministic engine validates and executes them.
 
+The project overview can be viewed [here](./docs/project_overview.md).
+
 ## Architecture
 
 Proton is split into two primary domains:
@@ -18,6 +20,8 @@ For VS Code users, refer to `.vscode/launch.json` for C# debugging configuration
 For Zed users, refer to `.zed/debug.json` for C# debugging configurations. Rust debugging is natively supported in Zed.
 
 Ensure that Docker is running: `docker compose up -d`
+
+**Below is outdated. This `README.md` will be cleaned up after majority of the documentation is in place. For now, keeping it for historical purposes.**
 
 ## Core Components
 
