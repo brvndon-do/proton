@@ -1,15 +1,14 @@
 ﻿using Proton.Engine.Core.Models;
+using Proton.Engine.Core.Models.MarketData;
 using Proton.Engine.Core.Models.Trading;
 using Proton.Engine.Core.Interfaces;
+using Proton.Engine.Brokers.Alpaca.Utilities;
 using Alpaca.Markets;
 using Microsoft.Extensions.Options;
 
-using AlpacaMarkets = Alpaca.Markets;
-using Proton.Engine.Brokers.Alpaca.Utilities;
-
 namespace Proton.Engine.Brokers.Alpaca;
 
-public class AlpacaBroker : IBroker
+public class AlpacaBroker : IOrderGateway, IAccountProvider, IMarketClock
 {
     private readonly IAlpacaTradingClient _tradingClient;
 
@@ -31,7 +30,7 @@ public class AlpacaBroker : IBroker
         IOrder orderResult = await _tradingClient.PostOrderAsync(new NewOrderRequest(
             symbol: order.Symbol,
             quantity: OrderQuantity.Fractional(order.Quantity),
-            side: (AlpacaMarkets.OrderSide)order.Side,
+            side: order.Side.ToAlpaca(),
             type: order.OrderType.ToAlpaca(),
             duration: order.TimeInForce.ToAlpaca()
         ), cancellationToken);
@@ -61,5 +60,17 @@ public class AlpacaBroker : IBroker
         throw new NotImplementedException();
     }
 
-    public async Task<bool> IsMarketOpenAsync(CancellationToken cancellationToken = default) => (await _tradingClient.GetClockAsync(cancellationToken)).IsOpen;
+    public async Task<MarketClock> GetClockAsync(CancellationToken cancellationToken = default)
+    {
+        IClock clock = await _tradingClient.GetClockAsync(cancellationToken);
+
+        return new MarketClock
+        {
+            IsOpen = clock.IsOpen,
+            TimestampUtc = clock.TimestampUtc,
+            NextOpenUtc = clock.NextOpenUtc,
+            NextCloseUtc = clock.NextCloseUtc,
+        };
+    }
+
 }

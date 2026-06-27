@@ -31,6 +31,13 @@ public static class ModelMapper
         _ => AlpacaMarkets.BarTimeFrame.Day
     };
 
+    public static AlpacaMarkets.OrderSide ToAlpaca(this ProtonTradingModels.OrderSide orderSide) => orderSide switch
+    {
+        ProtonTradingModels.OrderSide.Buy => AlpacaMarkets.OrderSide.Buy,
+        ProtonTradingModels.OrderSide.Sell => AlpacaMarkets.OrderSide.Sell,
+        _ => AlpacaMarkets.OrderSide.Buy,
+    };
+
     public static ProtonModels.NewsArticle ToCore(this AlpacaMarkets.INewsArticle article) => new ProtonModels.NewsArticle
     {
         Id = article.Id.ToString(),

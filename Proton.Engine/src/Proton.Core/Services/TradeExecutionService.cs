@@ -4,11 +4,11 @@ using Proton.Engine.Core.Interfaces;
 
 namespace Proton.Engine.Core.Services;
 
-public class TradeExecutionService(IBroker broker)
+public class TradeExecutionService(IOrderGateway orderGateway)
 {
-    private readonly IBroker _broker = broker;
+    private readonly IOrderGateway _orderGateway = orderGateway;
 
-    public Task<OrderResult> SubmitOrderAsync(TradeOrder order, CancellationToken cancellationToken = default) => _broker.CreateOrderAsync(order, cancellationToken);
+    public Task<OrderResult> SubmitOrderAsync(TradeOrder order, CancellationToken cancellationToken = default) => _orderGateway.CreateOrderAsync(order, cancellationToken);
 
     public async Task<ExecutionBatchResult> SubmitOrdersAsync(IEnumerable<TradeOrder> orders, ExecutionOptions? options = null, CancellationToken cancellationToken = default)
     {
@@ -29,7 +29,7 @@ public class TradeExecutionService(IBroker broker)
             {
                 try
                 {
-                    OrderResult result = await _broker.CreateOrderAsync(order, cancellationToken);
+                    OrderResult result = await _orderGateway.CreateOrderAsync(order, cancellationToken);
                     results[index] = result;
                 }
                 catch (Exception ex)
@@ -65,7 +65,7 @@ public class TradeExecutionService(IBroker broker)
 
     public async Task<bool> CancelOrderAsync(string orderId, CancellationToken cancellationToken = default)
     {
-        bool success = await _broker.CancelOrderAsync(orderId, cancellationToken);
+        bool success = await _orderGateway.CancelOrderAsync(orderId, cancellationToken);
 
         return success;
     }

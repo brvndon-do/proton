@@ -20,8 +20,11 @@ builder.Services.Configure<AlpacaOptions>(builder.Configuration.GetSection(Alpac
 builder.Services.Configure<RedisOptions>(builder.Configuration.GetSection(RedisOptions.SectionName));
 builder.Services.Configure<MarketDataIngestionOptions>(builder.Configuration.GetSection(MarketDataIngestionOptions.SectionName));
 
-// brokers
-builder.Services.AddSingleton<IBroker, AlpacaBroker>();
+// brokers  
+// Alpaca
+builder.Services.AddSingleton<IOrderGateway, AlpacaBroker>();
+builder.Services.AddSingleton<IAccountProvider, AlpacaBroker>();
+builder.Services.AddSingleton<IMarketClock, AlpacaBroker>();
 
 // core services
 builder.Services.AddSingleton<TradeExecutionService>();
@@ -36,8 +39,8 @@ builder.Services.AddSingleton<IBarRepository, ParquetRepository>();
 builder.Services.AddSingleton<ICacheRepository, RedisRepository>();
 
 // market data providers
-// builder.Services.AddSingleton<IMarketDataProvider, AlpacaMarketDataProvider>();
-builder.Services.AddSingleton<IMarketDataProvider, MockMarketDataProvider>();
+builder.Services.AddSingleton<IMarketDataProvider, AlpacaMarketDataProvider>();
+// builder.Services.AddSingleton<IMarketDataProvider, MockMarketDataProvider>();
 
 // modules
 builder.Services.AddHostedService<BacktestingService>();
