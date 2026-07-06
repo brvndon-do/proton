@@ -1,16 +1,28 @@
-use proton_agent_grpc::grpc_client::ProtonGrpcClient;
+mod cli;
+mod state;
+
+use anyhow::Result;
+use clap::Parser;
+use state::AppState;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+
+use crate::cli::output;
+use crate::cli::repl;
+
+#[derive(clap::Parser)]
+struct Args {
+    #[arg(long, default_value = "http://localhost:5182")]
+    host: String,
+}
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = ProtonGrpcClient::connect("http://localhost:5182").await?;
+async fn main() -> Result<()> {
+    let args = Args::parse();
+    let state = Arc::new(Mutex::new(AppState::new(&args.host)));
 
-    let mut stream = client
-        .stream_market_data(vec!["TSLA".into()], vec![])
-        .await?;
-
-    while let Some(snapshot) = stream.message().await? {
-        println!("{}: close {}", snapshot.symbol, snapshot.close);
-    }
+    output::print_banner(&args.host, false);
+    repl::run(state).await?;
 
     Ok(())
 }

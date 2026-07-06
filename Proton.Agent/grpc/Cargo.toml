@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1"
 tonic = "0.14.5"
 prost = "0.14"
 prost-types = "0.14"

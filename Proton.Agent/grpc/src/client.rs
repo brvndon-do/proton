@@ -2,6 +2,7 @@ pub mod proton_market_data {
     tonic::include_proto!("proton.market_data");
 }
 
+use anyhow::Result;
 use proton_market_data::market_data_client::MarketDataClient;
 use proton_market_data::{MarketSnapshot, MarketSnapshotRequest};
 use tonic::transport::Channel;
@@ -10,8 +11,9 @@ pub struct ProtonGrpcClient {
     client: MarketDataClient<Channel>,
 }
 
+// TODO: change this API to use "new" to construct then connect?
 impl ProtonGrpcClient {
-    pub async fn connect(uri: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn connect(uri: &str) -> Result<Self> {
         let client = MarketDataClient::connect(uri.to_string()).await?;
 
         Ok(Self { client })
@@ -21,7 +23,7 @@ impl ProtonGrpcClient {
         &mut self,
         symbols: Vec<String>,
         requested_indicators: Vec<String>,
-    ) -> Result<tonic::Streaming<MarketSnapshot>, Box<dyn std::error::Error>> {
+    ) -> Result<tonic::Streaming<MarketSnapshot>> {
         let request = tonic::Request::new(MarketSnapshotRequest {
             symbols,
             indicators: requested_indicators,
