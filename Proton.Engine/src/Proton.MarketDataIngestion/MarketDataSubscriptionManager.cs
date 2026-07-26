@@ -129,7 +129,7 @@ public class MarketDataSubscriptionManager(
     }
 
     // NOTE: another potential race condition -- if two threads that unsubscribes/unpins, they can both enter the teardown method
-    //       the solution is idempotency or locking the symbol, but this is low pri right now. 
+    //       the solution is idempotency or locking the symbol, but this is low pri right now.
     private async Task ReleaseSubscriptionAsync(SymbolSubscription subscription, CancellationToken cancellationToken)
     {
         if (subscription.ActiveSubscribersCount <= 0 && subscription.PinCount <= 0)

@@ -87,11 +87,16 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
 
     public async Task<IEnumerable<Bar>> GetHistoricalBarsAsync(IEnumerable<string> symbols, ProtonTrading.TimeFrame timeFrame, DateTime? from, DateTime? to, int limit = 1000, CancellationToken cancellationToken = default)
     {
-        IPage<IBar> historicalBars = await _dataClient.ListHistoricalBarsAsync(new HistoricalBarsRequest(
+        HistoricalBarsRequest request = new HistoricalBarsRequest(
             symbols: symbols,
             timeFrame: timeFrame.ToAlpaca(),
             timeInterval: new Interval<DateTime>(from, to)
-        ), cancellationToken);
+        )
+        {
+            Feed = MarketDataFeed.Iex, // NOTE: this is the only feed that's free!
+        };
+
+        IPage<IBar> historicalBars = await _dataClient.ListHistoricalBarsAsync(request, cancellationToken);
 
         return historicalBars.Items
             .Take(limit)
