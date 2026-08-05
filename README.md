@@ -11,7 +11,7 @@ Proton is split into two primary domains:
 - **Agentic Layer**: A multi-agent cluster consisting of a Researcher, Strategist, and Critic that collaborate to produce structured trading strategies. The agents iterate internally until the Critic approves a proposal, which is then submitted to the engine as a JSON contract via gRPC
 - **Trading Engine**: The deterministic core and "source of truth." It ingests live market data, validates strategy proposals through backtesting, monitors the market for trade signals, and executes orders through broker APIs
 
-More information can be found in the [design documentation](./docs/design_documentation.md).
+More information can be found in the [design documentation](./docs/engine/design_documentation.md).
 
 ## Debugging
 

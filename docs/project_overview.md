@@ -14,17 +14,17 @@ The entry point to the engine. This is where service orchestration is implemente
 
 ### `Proton.Backtesting`
 
-TODO: incomplete
+This has yet to be completed, but I plan on using [this](https://mccaffers.com/quantitative_engineering/building_a_backtesting_system/) as a reference when building.
 
 ### `Proton.Core`
-
-**NOTE: There is currently one service in this project. This should ideally be moved to its own project, implementing an `ITradeExecution` or something along those lines.**
 
 Shared repository for interfaces, models, and utilities. Majority of the modules in the engine reference this project.
 
 ### `Proton.Database.Parquet`
 
 A concrete implementation of `IBarRepository`. The engine stores market data via Parquet files, which is a column-oriented data file. `Proton.Backtesting` will utilize these files for backtesting.
+
+Most likely there'll be a time when this needs a rewrite. While the current implementation (a semaphore) protects the file from concurrent readers/writers, a bigger problem exists: switching to intraday granularity will cause this to fail.
 
 ### `Proton.Database.Redis`
 
