@@ -1,4 +1,5 @@
 mod cli;
+mod market;
 mod state;
 
 use anyhow::Result;
@@ -12,7 +13,7 @@ use crate::cli::repl;
 
 #[derive(clap::Parser)]
 struct Args {
-    #[arg(long, default_value = "http://localhost:5182")]
+    #[arg(long, default_value = "http://localhost:5000")]
     host: String,
 }
 

@@ -1,6 +1,6 @@
-use anyhow::Ok;
+use anyhow::{Ok, Result};
 
-use crate::state::AppState;
+use crate::{cli::output, state::AppState};
 
 #[derive(Debug)]
 pub enum Command {
@@ -27,7 +27,30 @@ pub fn parse_command(input: &str) -> Option<Command> {
     }
 }
 
-pub async fn dispatch(cmd: Command, state: &mut AppState) -> anyhow::Result<()> {
-    println!("TODO!");
+pub async fn dispatch(cmd: Command, state: &mut AppState) -> Result<()> {
+    match cmd {
+        Command::Start => {
+            state.connect().await?;
+            output::print_success("Connection successful.");
+        }
+        Command::Symbol { action, args } => {
+            if !state.is_connected() {
+                output::print_info("Engine must be connected first. Invoke /start.");
+                return Ok(());
+            }
+
+            // TODO: proper argument handling?
+            if args.len() > 1 {
+                output::print_error("Too many arguments!");
+                return Ok(());
+            }
+
+            if action == "add" {
+                // add to some sort of producer/consumer channel
+            }
+        }
+        _ => println!("TODO: finish all command branches"),
+    }
+
     Ok(())
 }

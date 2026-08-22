@@ -1,32 +1,21 @@
 use anyhow::Ok;
-use std::{
-    io::{self, Write},
-    sync::Arc,
-};
+use rustyline::ExternalPrinter;
+use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::{
     cli::{
         commands::{Command, dispatch, parse_command},
-        output,
+        input, output,
     },
     state::AppState,
 };
 
 pub async fn run(state: Arc<Mutex<AppState>>) -> anyhow::Result<()> {
-    loop {
-        print!("> ");
-        io::stdout().flush()?;
+    let (mut rx, printer) = input::spawn_reader();
 
-        let mut input = String::new();
-        let bytes = io::stdin().read_line(&mut input)?;
-
-        if bytes == 0 {
-            println!();
-            break;
-        }
-
-        let input = input.trim();
+    while let Some(line) = rx.recv().await {
+        let input = line.trim();
         if input.is_empty() {
             output::print_info("No input entered.");
             continue;

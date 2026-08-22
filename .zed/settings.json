@@ -10,6 +10,9 @@
         "csharp|auto_insert": {
           "dotnet_enable_auto_insert": false,
         },
+        "csharp|code_lens": {
+          "dotnet_enable_references_code_lens": true,
+        }
       },
     },
   },
