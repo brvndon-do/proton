@@ -2,13 +2,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Run AppHost",
+            "name": "Run App",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Proton.Engine/src/Proton.AppHost/bin/Debug/net10.0/Proton.AppHost",
+            "program": "${workspaceFolder}/Proton.Engine/src/Proton.App/bin/Debug/net10.0/Proton.App",
             "args": [],
-            "cwd": "${workspaceFolder}/Proton.Engine/src/Proton.AppHost",
+            "cwd": "${workspaceFolder}/Proton.Engine/src/Proton.App",
             "stopAtEntry": false,
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
@@ -16,8 +16,8 @@
             "sourceFileMap": {
                 "/Views": "${workspaceFolder}/Views"
             },
-            "launchSettingsFilePath": "${workspaceFolder}/Proton.Engine/src/Proton.AppHost/Properties/launchSettings.json",
-            "launchSettingsProfile": "https"
+            "launchSettingsFilePath": "${workspaceFolder}/Proton.Engine/src/Proton.App/Properties/launchSettings.json",
+            "launchSettingsProfile": "Proton.App"
         }
     ]
 }

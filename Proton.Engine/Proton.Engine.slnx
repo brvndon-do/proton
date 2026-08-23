@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Proton.App/Proton.App.csproj" />
     <Project Path="src/Proton.AppHost/Proton.AppHost.csproj" />
     <Project Path="src/Proton.Backtesting/Proton.Backtesting.csproj" />
     <Project Path="src/Proton.Brokers.Alpaca/Proton.Brokers.Alpaca.csproj" />

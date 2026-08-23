@@ -46,6 +46,10 @@ public class MarketDataService(
             await foreach (MarketDataSnapshot snapshot in marketDataChannel.Reader.ReadAllAsync(cancellationToken))
                 await responseStream.WriteAsync(snapshot.ToGrpc(), cancellationToken);
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, "Operation canceled");
+        }
         finally
         {
             await completionTask;
