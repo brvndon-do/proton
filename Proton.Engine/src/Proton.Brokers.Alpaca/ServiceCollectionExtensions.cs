@@ -6,7 +6,7 @@ namespace Proton.Engine.Brokers.Alpaca;
 
 public static class ServiceCollectionExtensions
 {
-    public static void AddProtonAlpacaBrokerServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddProtonAlpacaBrokerServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<AlpacaOptions>(configuration.GetSection(AlpacaOptions.SectionName));
 
@@ -15,5 +15,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMarketClock, AlpacaBroker>();
 
         services.AddSingleton<IMarketDataProvider, AlpacaMarketDataProvider>();
+
+        return services;
     }
 }

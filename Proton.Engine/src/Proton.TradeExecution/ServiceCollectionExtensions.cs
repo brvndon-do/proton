@@ -4,8 +4,10 @@ namespace Proton.Engine.TradeExecution;
 
 public static class ServiceCollectionExtensions
 {
-    public static void AddProtonTradeServices(this IServiceCollection services)
+    public static IServiceCollection AddProtonTradeServices(this IServiceCollection services)
     {
         services.AddSingleton<ITradeExecutionService, TradeExecutionService>();
+
+        return services;
     }
 }

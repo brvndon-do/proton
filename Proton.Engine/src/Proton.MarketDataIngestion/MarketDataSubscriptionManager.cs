@@ -28,7 +28,7 @@ public class MarketDataSubscriptionManager(
     private readonly CancellationTokenSource _cts = new CancellationTokenSource();
     private readonly ConcurrentDictionary<string, SymbolSubscription> _activeSubscriptions = [];
 
-    private readonly Lock _upstreamTaskLock = new();
+    private readonly Lock _upstreamTaskLock = new Lock();
     private Task? _upstreamTask;
 
     public async Task PinAsync(string symbol, CancellationToken cancellationToken = default)
@@ -158,8 +158,6 @@ public class MarketDataSubscriptionManager(
         const int PARQUET_BUFFER_MAX_SZ = 100;
 
         ConcurrentDictionary<string, List<Bar>> batchBuffers = [];
-
-        _logger.LogInformation("Starting market data upstream..");
 
         try
         {

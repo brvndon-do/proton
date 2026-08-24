@@ -2,7 +2,7 @@
 
 public sealed class RedisOptions
 {
-    public static string SectionName = nameof(RedisOptions);
-
-    public int MaxBarsPerSymbol { get; set; }
+    public const string SectionName = nameof(RedisOptions);
+    public required string Configuration { get; init; }
+    public int MaxBarsPerSymbol { get; init; }
 }

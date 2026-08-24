@@ -7,17 +7,16 @@ using Proton.Engine.TradeExecution;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
-// module registrations
-builder.Services.AddProtonTradeServices();
-builder.Services.AddProtonIndicatorServices();
-builder.Services.AddProtonMarketDataIngestionServices(builder.Configuration);
-
-// databases/repositories
-builder.Services.AddProtonParquetServices();
-builder.Services.AddProtonRedisServices(builder.Configuration);
-
-// brokers
-builder.Services.AddProtonAlpacaBrokerServices(builder.Configuration);
+builder.Services
+    // module registrations
+    .AddProtonTradeServices()
+    .AddProtonIndicatorServices()
+    .AddProtonMarketDataIngestionServices(builder.Configuration)
+    // databases/repositories
+    .AddProtonParquetServices()
+    .AddProtonRedisServices(builder.Configuration)
+    // brokers
+    .AddProtonAlpacaBrokerServices(builder.Configuration);
 
 IHost host = builder.Build();
 host.Run();

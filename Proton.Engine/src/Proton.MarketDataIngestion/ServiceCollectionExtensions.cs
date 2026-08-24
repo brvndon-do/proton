@@ -6,12 +6,14 @@ namespace Proton.Engine.MarketDataIngestion;
 
 public static class ServiceCollectionExtensions
 {
-    public static void AddProtonMarketDataIngestionServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddProtonMarketDataIngestionServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<MarketDataIngestionOptions>(configuration.GetSection(MarketDataIngestionOptions.SectionName));
 
         services.AddSingleton<IMarketDataSubscriptionManager, MarketDataSubscriptionManager>();
 
         services.AddHostedService<MarketDataIngestion>();
+
+        return services;
     }
 }

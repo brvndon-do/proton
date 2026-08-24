@@ -5,8 +5,10 @@ namespace Proton.Engine.Indicators;
 
 public static class ServiceCollectionExtensions
 {
-    public static void AddProtonIndicatorServices(this IServiceCollection services)
+    public static IServiceCollection AddProtonIndicatorServices(this IServiceCollection services)
     {
         services.AddSingleton<IIndicatorService, IndicatorService>();
+
+        return services;
     }
 }
