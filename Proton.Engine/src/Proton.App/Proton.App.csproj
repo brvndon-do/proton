@@ -13,6 +13,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Settings.Configuration" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,5 +28,6 @@
     <ProjectReference Include="..\Proton.Database.Parquet\Proton.Database.Parquet.csproj" />
     <ProjectReference Include="..\Proton.Database.Redis\Proton.Database.Redis.csproj" />
     <ProjectReference Include="..\Proton.TradeExecution\Proton.TradeExecution.csproj" />
+    <ProjectReference Include="..\Proton.Repl\Proton.Repl.csproj" />
   </ItemGroup>
 </Project>

@@ -328,3 +328,6 @@ paket-files/
 
 **pycache**/
 \*.pyc
+
+# Serilog file sink output
+logs/

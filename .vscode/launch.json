@@ -10,6 +10,7 @@
             "args": [],
             "cwd": "${workspaceFolder}/Proton.Engine/src/Proton.App",
             "stopAtEntry": false,
+            "console": "integratedTerminal",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             },
