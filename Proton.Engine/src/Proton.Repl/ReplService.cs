@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Proton.Engine.Repl.Commands;
+using Proton.Engine.Repl.Models;
 using Spectre.Console;
 
 namespace Proton.Engine.Repl;
@@ -30,7 +31,7 @@ public class ReplService(
         while (!cts.IsCancellationRequested)
         {
             string line = await AnsiConsole.PromptAsync(
-                new TextPrompt<string>("[green]proton>[/]").AllowEmpty(),
+                new TextPrompt<string>("[green]>[/]").AllowEmpty(),
                 cts.Token);
 
             await DispatchAsync(line, cts.Token);
@@ -52,7 +53,20 @@ public class ReplService(
 
         try
         {
-            await command.ExecuteAsync(parts[1..], cancellationToken);
+            (CommandStatus status, string? message) = await command.ExecuteAsync(parts[1..], cancellationToken);
+
+            switch (status)
+            {
+                // TODO: make prettier
+                case CommandStatus.Invalid:
+                    AnsiConsole.MarkupLine($"[yellow]{message.EscapeMarkup()}[/]");
+                    return;
+                case CommandStatus.Error:
+                    AnsiConsole.MarkupLine($"[red]Error: {message.EscapeMarkup()}");
+                    return;
+                case CommandStatus.Success:
+                    return;
+            }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

@@ -90,8 +90,7 @@ public class AlpacaMarketDataProvider : IMarketDataProvider
         HistoricalBarsRequest request = new HistoricalBarsRequest(
             symbols: symbols,
             timeFrame: timeFrame.ToAlpaca(),
-            timeInterval: new Interval<DateTime>(from, to)
-        )
+            timeInterval: new Interval<DateTime>(from, to))
         {
             Feed = MarketDataFeed.Iex, // NOTE: this is the only feed that's free!
         };

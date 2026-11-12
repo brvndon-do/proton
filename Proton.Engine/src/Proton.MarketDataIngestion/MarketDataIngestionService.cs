@@ -4,21 +4,19 @@ using Proton.Engine.Core.Interfaces;
 
 namespace Proton.Engine.MarketDataIngestion;
 
-public class MarketDataIngestion(
+public class MarketDataIngestionService(
     IEnumerable<IMarketDataProvider> providers,
     IMarketDataSubscriptionManager marketDataSubscriptionManager,
-    ILogger<MarketDataIngestion> logger
-) : BackgroundService
+    ILogger<MarketDataIngestionService> logger)
+    : BackgroundService
 {
     private readonly IMarketDataSubscriptionManager _marketDataSubscriptionManager = marketDataSubscriptionManager;
-    private readonly ILogger<MarketDataIngestion> _logger = logger;
+    private readonly ILogger<MarketDataIngestionService> _logger = logger;
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
         foreach (IMarketDataProvider provider in providers)
-        {
             await provider.ConnectAsync(cancellationToken);
-        }
 
         await base.StartAsync(cancellationToken);
     }
@@ -31,8 +29,6 @@ public class MarketDataIngestion(
         string[] symbols = ["AAPL", "TSLA", "NVDA", "META"];
 
         foreach (string symbol in symbols)
-        {
             await _marketDataSubscriptionManager.PinAsync(symbol, cancellationToken);
-        }
     }
 }

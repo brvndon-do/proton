@@ -9,6 +9,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<IReplCommand, ExitCommand>();
         services.AddSingleton<IReplCommand, StatusCommand>();
+        services.AddSingleton<IReplCommand, SubscribeCommand>();
+        services.AddSingleton<IReplCommand, UnsubscribeCommand>();
 
         services.AddHostedService<ReplService>();
 

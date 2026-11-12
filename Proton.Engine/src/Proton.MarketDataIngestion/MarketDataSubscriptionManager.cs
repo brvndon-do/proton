@@ -16,8 +16,8 @@ public class MarketDataSubscriptionManager(
     ICacheRepository cacheRepository,
     IBarRepository barRepository,
     IOptions<MarketDataIngestionOptions> options,
-    ILogger<MarketDataSubscriptionManager> logger
-) : IMarketDataSubscriptionManager, IAsyncDisposable
+    ILogger<MarketDataSubscriptionManager> logger)
+    : IMarketDataSubscriptionManager, IAsyncDisposable
 {
     private readonly IMarketDataProvider _marketDataProvider = marketDataProvider;
     private readonly ICacheRepository _cacheRepository = cacheRepository;

@@ -25,6 +25,8 @@ builder.Services.AddSerilog(config =>
 });
 
 builder.Services
+    // system
+    .AddSingleton(TimeProvider.System)
     // module registrations
     .AddProtonTradeServices()
     .AddProtonIndicatorServices()
