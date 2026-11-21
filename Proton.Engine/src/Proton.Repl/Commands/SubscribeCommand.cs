@@ -16,6 +16,8 @@ public class SubscribeCommand(
 
     public string Name => "subscribe";
     public string Description => "Subscribes to a symbol.";
+    public string Usage => "subscribe <symbol>";
+    public IReadOnlyList<string> Examples => ["subscribe AAPL"];
 
     public async Task<(CommandStatus status, string? message)> ExecuteAsync(string[] args, CancellationToken cancellationToken)
     {

@@ -7,6 +7,7 @@ public class StatusCommand : IReplCommand
 {
     public string Name => "status";
     public string Description => "Displays engine status.";
+    public IReadOnlyList<string> Examples => ["status"];
 
     public Task<(CommandStatus status, string? message)> ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
     {

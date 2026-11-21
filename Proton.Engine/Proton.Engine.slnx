@@ -14,5 +14,6 @@
   <Folder Name="/tests/">
     <Project Path="tests/Proton.Backtesting.Tests/Proton.Backtesting.Tests.csproj" />
     <Project Path="tests/Proton.Core.Tests/Proton.Core.Tests.csproj" />
+    <Project Path="tests/Proton.Repl.Tests/Proton.Repl.Tests.csproj" />
   </Folder>
 </Solution>
