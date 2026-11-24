@@ -5,7 +5,7 @@ Open issues and deliberate workarounds in `Proton.Engine`. Remove entries as the
 ## Functional gaps
 
 - **Backtesting is a stub.** `Proton.Backtesting/BacktestingService.cs` is empty and isn't registered in `Proton.App`. It is the validation gate for every agent-proposed strategy, so it's the next priority.
-- **No tests.** `Proton.Core.Tests` and `Proton.Backtesting.Tests` are scaffolds; `dotnet test` discovers zero tests.
+- **Little test coverage.** Only `Proton.Repl.Tests` has tests (the help command and REPL command registration). `Proton.Core.Tests` and `Proton.Backtesting.Tests` are still empty scaffolds.
 - **Hard-coded warmup symbols.** `MarketDataIngestion.ExecuteAsync` pins AAPL, TSLA, NVDA and META. These should come from configuration or another source.
 
 ## Bugs

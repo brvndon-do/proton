@@ -10,6 +10,7 @@ public class ExitCommand(IHostApplicationLifetime applicationLifetime) : IReplCo
     public string Name => "exit";
     public IReadOnlyList<string> Aliases => ["quit", "q"];
     public string Description => "Stops the application.";
+    public IReadOnlyList<string> Examples => ["exit", "q"];
 
     public Task<(CommandStatus status, string? message)> ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
     {

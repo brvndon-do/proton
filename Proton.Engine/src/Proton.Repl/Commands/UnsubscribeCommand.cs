@@ -12,6 +12,8 @@ public class UnsubscribeCommand(IMarketDataSubscriptionManager marketDataSubscri
 
     public string Name => "unsubscribe";
     public string Description => "Unsubscribes from a symbol.";
+    public string Usage => "unsubscribe <symbol>";
+    public IReadOnlyList<string> Examples => ["unsubscribe AAPL"];
 
     public async Task<(CommandStatus status, string? message)> ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
     {
